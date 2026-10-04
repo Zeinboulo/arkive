@@ -2,6 +2,8 @@
 target/
 **/*.rs.bk
 Cargo.lock
+*.exe
+apps/desktop/bin/
 
 # Node.js dependencies & builds
 node_modules/

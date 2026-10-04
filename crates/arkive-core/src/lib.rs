@@ -38,3 +38,4 @@ pub use archive::{
 pub use error::{Error, Result};
 pub use format::{Format, ZipMethod};
 pub use progress::{CancelToken, NoProgress, Progress};
+pub use repair::RepairReport;

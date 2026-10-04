@@ -73,3 +73,22 @@ export interface ProgressUpdate {
   percent: number;
   speedMbS: number;
 }
+
+declare global {
+  interface Window {
+    arkive?: {
+      isDesktop: boolean;
+      openArchiveDialog: () => Promise<string | null>;
+      openFilesDialog: () => Promise<string[]>;
+      saveArchiveDialog: (defaultName?: string) => Promise<string | null>;
+      selectFolderDialog: () => Promise<string | null>;
+      listArchive: (path: string, password?: string | null) => Promise<Entry[]>;
+      getArchiveInfo: (path: string, password?: string | null) => Promise<ArchiveInfo>;
+      createArchive: (options: any) => Promise<string>;
+      extractArchive: (options: any) => Promise<string>;
+      testArchive: (path: string, password?: string | null) => Promise<string>;
+      repairArchive: (archive: string, output?: string | null) => Promise<string>;
+      runBenchmark: (config: any) => Promise<BenchReport>;
+    };
+  }
+}

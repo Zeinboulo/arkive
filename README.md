@@ -97,13 +97,17 @@ cargo build --release
 cargo test
 ```
 
-### Running the Desktop App
+### Running the Native Desktop App
 
-```bash
-cd apps/desktop
-npm install
-npm run dev
-```
+Arkive includes a standalone desktop application window (no web browser or localhost required):
+
+- **Windows 1-Click Launch:** Simply double-click `Arkive.bat` in the project root!
+- **Or via CLI:**
+  ```bash
+  cd apps/desktop
+  npm run app
+  ```
+This boots Arkive directly in a dedicated native desktop window with native Windows file pickers and direct connection to `arkive.exe`.
 
 ---
 
