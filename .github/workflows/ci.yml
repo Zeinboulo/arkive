@@ -1,0 +1,51 @@
+name: CI & Release Build
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+    branches: [main, master]
+
+jobs:
+  test-core:
+    name: Test Core & CLI (Linux & Windows)
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Rust Cache
+        uses: Swatinem/rust-cache@v2
+
+      - name: Check Formatting
+        run: cargo fmt --all --check
+
+      - name: Run Tests
+        run: cargo test --workspace --verbose
+
+      - name: Build CLI Release
+        run: cargo build --release -p arkive-cli
+
+  build-desktop:
+    name: Build Desktop Frontend
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install Desktop Dependencies
+        working-directory: apps/desktop
+        run: npm ci
+
+      - name: Build Production Frontend
+        working-directory: apps/desktop
+        run: npm run build

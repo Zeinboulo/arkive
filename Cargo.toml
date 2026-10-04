@@ -1,0 +1,23 @@
+[workspace]
+resolver = "2"
+members = ["crates/arkive-core", "crates/arkive-cli"]
+
+[workspace.package]
+version = "0.1.0"
+edition = "2021"
+license = "MIT"
+authors = ["Arkive contributors"]
+repository = "https://github.com/your-username/arkive"
+
+[workspace.dependencies]
+arkive-core = { path = "crates/arkive-core" }
+anyhow = "1"
+thiserror = "2"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+
+[profile.release]
+lto = "thin"
+codegen-units = 1
+strip = true
+opt-level = 3

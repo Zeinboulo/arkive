@@ -1,0 +1,22 @@
+[package]
+name = "arkive-cli"
+description = "Command-line interface for Arkive archive manager"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+authors.workspace = true
+repository.workspace = true
+
+[[bin]]
+name = "arkive"
+path = "src/main.rs"
+
+[dependencies]
+arkive-core = { workspace = true }
+anyhow.workspace = true
+clap = { version = "4", features = ["derive", "cargo"] }
+indicatif = "0.17"
+colored = "2"
+serde.workspace = true
+serde_json.workspace = true
+tabled = { version = "0.17", features = ["ansi"] }

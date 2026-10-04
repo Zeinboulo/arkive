@@ -1,0 +1,20 @@
+# Rust build artifacts
+target/
+**/*.rs.bk
+Cargo.lock
+
+# Node.js dependencies & builds
+node_modules/
+dist/
+.vite/
+
+# Tauri build artifacts
+src-tauri/target/
+
+# IDE & OS files
+.DS_Store
+Thumbs.db
+*.swp
+*.bak
+.idea/
+.vscode/
