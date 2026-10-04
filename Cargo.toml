@@ -7,7 +7,7 @@ version = "0.1.0"
 edition = "2021"
 license = "MIT"
 authors = ["Arkive contributors"]
-repository = "https://github.com/your-username/arkive"
+repository = "https://github.com/Zeinboulo/arkive"
 
 [workspace.dependencies]
 arkive-core = { path = "crates/arkive-core" }

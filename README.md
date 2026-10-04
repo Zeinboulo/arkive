@@ -87,7 +87,7 @@ Arkive was engineered specifically with **modern data systems and analytics work
 
 ```bash
 # Clone the repository
-git clone https://github.com/your-username/arkive.git
+git clone https://github.com/Zeinboulo/arkive.git
 cd arkive
 
 # Build the CLI and Core library
