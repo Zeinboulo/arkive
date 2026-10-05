@@ -49,51 +49,105 @@ function runArkive(args) {
   });
 }
 
+let mainWindow = null;
+
 function createWindow() {
-  const win = new BrowserWindow({
+  mainWindow = new BrowserWindow({
     width: 1100,
     height: 720,
     minWidth: 850,
     minHeight: 550,
     title: 'Arkive — High-Performance Archive Manager',
     backgroundColor: '#0f172a',
+    show: false,
     autoHideMenuBar: true,
     webPreferences: {
       preload: path.join(__dirname, 'preload.cjs'),
       nodeIntegration: false,
       contextIsolation: true,
+      sandbox: false,
     },
   });
 
+  mainWindow.once('ready-to-show', () => {
+    mainWindow.show();
+    mainWindow.focus();
+  });
+
+  // Fallback to force show if ready-to-show event is missed
+  setTimeout(() => {
+    if (mainWindow && !mainWindow.isDestroyed() && !mainWindow.isVisible()) {
+      mainWindow.show();
+      mainWindow.focus();
+    }
+  }, 1200);
+
+  mainWindow.webContents.on('did-fail-load', (_event, errorCode, errorDescription, validatedURL) => {
+    console.error(`Failed to load UI: ${errorDescription} (${errorCode}) at ${validatedURL}`);
+    dialog.showErrorBox(
+      'Arkive Failed to Load',
+      `Failed to load the interface (${errorDescription}, code ${errorCode}).\nURL: ${validatedURL}`
+    );
+  });
+
   const indexPath = path.join(__dirname, '..', 'dist', 'index.html');
-  if (fs.existsSync(indexPath)) {
-    win.loadFile(indexPath);
+  if (app.isPackaged || fs.existsSync(indexPath)) {
+    mainWindow.loadFile(indexPath).catch((err) => {
+      console.error('Failed to load local HTML:', err);
+      dialog.showErrorBox('Arkive Error', `Could not load application bundle:\n${err.message}`);
+    });
   } else {
-    win.loadURL('http://localhost:5173');
+    mainWindow.loadURL('http://localhost:5173').catch((err) => {
+      console.error('Failed to load dev server:', err);
+      mainWindow.loadFile(indexPath).catch(() => {});
+    });
   }
 
   if (process.env.ARKIVE_SELFTEST) {
     const log = [];
-    win.webContents.on('console-message', (_e, level, msg) => log.push(`console[${level}] ${msg}`));
-    win.webContents.on('did-fail-load', (_e, code, desc) => log.push(`did-fail-load ${code} ${desc}`));
-    win.webContents.on('did-finish-load', () => {
+    mainWindow.webContents.on('console-message', (_e, level, msg) => log.push(`console[${level}] ${msg}`));
+    mainWindow.webContents.on('did-fail-load', (_e, code, desc) => log.push(`did-fail-load ${code} ${desc}`));
+    mainWindow.webContents.on('did-finish-load', () => {
       setTimeout(async () => {
-        const img = await win.webContents.capturePage();
+        const img = await mainWindow.webContents.capturePage();
         fs.writeFileSync(process.env.ARKIVE_SELFTEST, img.toPNG());
-        const text = await win.webContents.executeJavaScript('document.body.innerText.length');
+        const text = await mainWindow.webContents.executeJavaScript('document.body.innerText.length');
         fs.writeFileSync(process.env.ARKIVE_SELFTEST + '.log', log.join('\n') + `\nbodyTextLength=${text}\nbinary=${findArkiveBinary()}\n`);
         app.quit();
       }, 2500);
     });
   }
+
+  mainWindow.on('closed', () => {
+    mainWindow = null;
+  });
 }
 
-app.whenReady().then(() => {
-  createWindow();
-
-  app.on('activate', () => {
-    if (BrowserWindow.getAllWindows().length === 0) createWindow();
+// Single instance lock
+const gotLock = app.requestSingleInstanceLock();
+if (!gotLock) {
+  app.quit();
+} else {
+  app.on('second-instance', () => {
+    if (mainWindow) {
+      if (mainWindow.isMinimized()) mainWindow.restore();
+      mainWindow.show();
+      mainWindow.focus();
+    }
   });
+
+  app.whenReady().then(() => {
+    createWindow();
+
+    app.on('activate', () => {
+      if (BrowserWindow.getAllWindows().length === 0) createWindow();
+    });
+  });
+}
+
+process.on('uncaughtException', (err) => {
+  console.error('Uncaught Exception:', err);
+  dialog.showErrorBox('Arkive Unexpected Error', `${err.message}\n\n${err.stack || ''}`);
 });
 
 app.on('window-all-closed', () => {
