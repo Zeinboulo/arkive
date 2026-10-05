@@ -509,7 +509,7 @@ fn handle_bench(args: BenchArgs) -> Result<()> {
         iterations: 1,
     };
 
-    println!(
+    eprintln!(
         "{} Running compression benchmark ({} MiB dataset)...",
         "==>".bold().green(),
         cfg.size_mb

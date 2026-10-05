@@ -77,6 +77,19 @@ Arkive was engineered specifically with **modern data systems and analytics work
 
 ---
 
+## Download
+
+Grab the latest Windows build from the **[Releases page](https://github.com/Zeinboulo/arkive/releases/latest)**:
+
+- `Arkive-Setup-x.y.z.exe`: installer (Start Menu + Desktop shortcut)
+- `Arkive-Portable-x.y.z.exe`: single-file portable app, no install needed
+
+> Windows SmartScreen may warn because the build is not code-signed. Click *More info → Run anyway*.
+
+To build the installer yourself: `cd apps/desktop && npm install && npm run dist` (output in `apps/desktop/release`).
+
+---
+
 ## Installation & Build
 
 ### Prerequisites

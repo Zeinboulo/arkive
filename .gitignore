@@ -20,3 +20,6 @@ Thumbs.db
 *.bak
 .idea/
 .vscode/
+
+release/
+apps/desktop/release/

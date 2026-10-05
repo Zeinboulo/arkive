@@ -1,16 +1,22 @@
 const { app, BrowserWindow, ipcMain, dialog } = require('electron');
+
+function parseJson(text) {
+  const i = text.search(/[\[{]/);
+  return JSON.parse(i > 0 ? text.slice(i) : text);
+}
 const path = require('path');
 const { spawn } = require('child_process');
 const fs = require('fs');
 
 function findArkiveBinary() {
-  const candidates = [
-    path.join(__dirname, '..', '..', '..', 'target', 'release', 'arkive.exe'),
-    path.join(__dirname, '..', '..', '..', 'target', 'debug', 'arkive.exe'),
-    path.join(process.env.LOCALAPPDATA || '', 'arkive-target', 'release', 'arkive.exe'),
-    path.join(process.env.LOCALAPPDATA || '', 'arkive-target', 'debug', 'arkive.exe'),
-    path.join(__dirname, '..', 'bin', 'arkive.exe'),
-  ];
+  const candidates = app.isPackaged
+    ? [path.join(process.resourcesPath, 'bin', 'arkive.exe')]
+    : [
+        path.join(__dirname, '..', 'bin', 'arkive.exe'),
+        path.join(__dirname, '..', '..', '..', 'target', 'release', 'arkive.exe'),
+        path.join(process.env.LOCALAPPDATA || '', 'arkive-target', 'release', 'arkive.exe'),
+        path.join(process.env.LOCALAPPDATA || '', 'arkive-target', 'debug', 'arkive.exe'),
+      ];
   for (const c of candidates) {
     if (fs.existsSync(c)) {
       return c;
@@ -64,6 +70,21 @@ function createWindow() {
     win.loadFile(indexPath);
   } else {
     win.loadURL('http://localhost:5173');
+  }
+
+  if (process.env.ARKIVE_SELFTEST) {
+    const log = [];
+    win.webContents.on('console-message', (_e, level, msg) => log.push(`console[${level}] ${msg}`));
+    win.webContents.on('did-fail-load', (_e, code, desc) => log.push(`did-fail-load ${code} ${desc}`));
+    win.webContents.on('did-finish-load', () => {
+      setTimeout(async () => {
+        const img = await win.webContents.capturePage();
+        fs.writeFileSync(process.env.ARKIVE_SELFTEST, img.toPNG());
+        const text = await win.webContents.executeJavaScript('document.body.innerText.length');
+        fs.writeFileSync(process.env.ARKIVE_SELFTEST + '.log', log.join('\n') + `\nbodyTextLength=${text}\nbinary=${findArkiveBinary()}\n`);
+        app.quit();
+      }, 2500);
+    });
   }
 }
 
@@ -132,14 +153,14 @@ ipcMain.handle('arkive:list', async (_, { path: archivePath, password }) => {
   const args = ['l', archivePath, '--json'];
   if (password) args.push('-p', password);
   const { stdout } = await runArkive(args);
-  return JSON.parse(stdout);
+  return parseJson(stdout);
 });
 
 ipcMain.handle('arkive:info', async (_, { path: archivePath, password }) => {
   const args = ['i', archivePath, '--json'];
   if (password) args.push('-p', password);
   const { stdout } = await runArkive(args);
-  return JSON.parse(stdout);
+  return parseJson(stdout);
 });
 
 ipcMain.handle('arkive:create', async (_, { archive, inputs, format, level, password, threads, method }) => {
