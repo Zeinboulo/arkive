@@ -11,10 +11,10 @@ import {
   Sliders,
   CheckCircle2,
 } from 'lucide-react';
-import { BenchReport, BenchResult } from '../types';
+import { BenchConfig, BenchReport, BenchResult } from '../types';
 
 interface BenchmarkViewProps {
-  onRunBench: (config: any) => Promise<void>;
+  onRunBench: (config: BenchConfig) => Promise<void>;
   isRunning: boolean;
   progressMsg: string;
   report: BenchReport | null;

@@ -13,10 +13,20 @@ import {
 } from 'lucide-react';
 import { ArchiveFormat } from '../types';
 
+export interface CreateModalSubmitData {
+  name: string;
+  format: ArchiveFormat;
+  level: number;
+  password?: string | null;
+  threads: number;
+  zipMethod: string;
+  inputs: string[];
+}
+
 interface CreateModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onSubmit: (options: any) => void;
+  onSubmit: (options: CreateModalSubmitData) => void;
   inputPaths: string[];
 }
 

@@ -14,34 +14,51 @@ Built with a **Rust systems core**, a unified CLI, and a desktop UI powered by *
 
 ## Architecture Overview
 
+```mermaid
+flowchart TD
+    subgraph UI ["Desktop UI Layer (React 18 + Tailwind CSS + Lucide)"]
+        UI_Browser["Dual-Mode Browser (PC Explorer & Archive View)"]
+        UI_Modals["Operation Modals (Create, Extract, Repair, Info)"]
+        UI_Bench["Benchmark & Pareto Frontier Dashboard"]
+        UI_DnD["Drag & Drop File & Folder Dispatcher"]
+    end
+
+    subgraph Host ["Host Platform Layer (Electron Main Process)"]
+        Host_IPC["Secure IPC Gateway (contextBridge)"]
+        Host_Shell["Windows Explorer Context Menu Manager (HKCU Shell)"]
+        Host_FS["Filesystem Explorer & Quick Places Provider"]
+        Host_Lock["Single-Instance Process Coordinator"]
+    end
+
+    subgraph Engine ["Rust Systems Core Engine (arkive-cli & arkive-core)"]
+        CLI["CLI Subcommands (a, x, l, t, cat, bench, repair)"]
+        Core_Con["Parallel Concurrency Engine (Rayon ThreadPool)"]
+        Core_Repair["ZIP Central Directory Reconstructor"]
+        Core_Pareto["2D Pareto-Optimal Frontier Analyzer"]
+        Core_Crypto["AES-256 WinZip AE-2 & 7-Zip Encryption"]
+    end
+
+    subgraph Codecs ["Format Backends & Codecs"]
+        FMT_Zip["ZIP (Deflate / Zstandard / Bzip2 / Store)"]
+        FMT_7z["7-Zip (LZMA2 / AES-256)"]
+        FMT_Tar["TAR Suite (Gz / Bz2 / Xz / Zst)"]
+        FMT_Rar["RAR Parser (Unrar Extraction)"]
+    end
+
+    UI --> Host_IPC
+    Host_IPC --> Host
+    Host --> Host_Lock
+    Host --> Host_Shell
+    Host --> Host_FS
+    Host --> CLI
+    CLI --> Core_Con
+    CLI --> Core_Repair
+    CLI --> Core_Pareto
+    CLI --> Core_Crypto
+    Core_Con --> Codecs
 ```
-                      ┌────────────────────────────────────────┐
-                      │    React + TypeScript Desktop UI       │
-                      │  (Tailwind CSS, Lucide, Framer UI)     │
-                      └──────────────────┬─────────────────────┘
-                                         │ Electron IPC
-                      ┌──────────────────▼─────────────────────┐
-                      │           arkive-cli / Engine          │
-                      │      (clap, multi-progress, Tabled)    │
-                      └──────────────────┬─────────────────────┘
-                                         │
-                      ┌──────────────────▼─────────────────────┐
-                      │              arkive-core               │
-                      │ ┌────────────────────────────────────┐ │
-                      │ │ Parallel Compression (Rayon)       │ │
-                      │ │ Multi-threaded Streams (Zstd, XZ)  │ │
-                      │ │ AES-256 WinZip & 7z Encryption     │ │
-                      │ │ ZIP Central Directory Repair       │ │
-                      │ │ Codec Benchmark & Pareto Analysis  │ │
-                      │ └────────────────────────────────────┘ │
-                      └──────────────────┬─────────────────────┘
-                                         │
-        ┌───────────────┬────────────────┼───────────────┬───────────────┐
-        ▼               ▼                ▼               ▼               ▼
-     ZIP Engine     7-Zip Engine     TAR Suite       RAR Engine      Raw Codecs
-  (Deflate/Bzip2/  (LZMA2 + AES256) (Gz/Bz2/Xz/Zst) (Extraction)   (Deflate/Bzip2/
-    Zstd/Store)                                                     Xz/Zstd/Lz4)
-```
+
+> 📖 **Deep Dive:** Read the complete [ARCHITECTURE.md](ARCHITECTURE.md) for sequence diagrams, threadpool mechanics, and algorithmic details.
 
 ---
 
@@ -51,12 +68,15 @@ Built with a **Rust systems core**, a unified CLI, and a desktop UI powered by *
 |---|:---:|:---:|:---:|:---:|
 | **Modern Desktop UI** | ✅ React + Tailwind | ❌ 1990s Win32 | ❌ 1990s Win32 | ⚠️ Qt/GTK |
 | **Open Source & Free License** | ✅ MIT | ❌ Proprietary ($39) | ✅ LGPL | ✅ LGPL |
+| **Windows Explorer Right-Click Integration** | ✅ Yes (Native Shell) | ✅ Yes | ✅ Yes | ⚠️ Partial |
+| **PC File Explorer & Quick Places** | ✅ Yes | ✅ Yes | ❌ Basic tree | ⚠️ Partial |
 | **Cross-Format Support** (ZIP, 7z, TAR.*, RAR extract) | ✅ Full | ✅ Full | ✅ Full | ✅ Full |
 | **Parallel ZIP Compression** (Rayon memory chunking) | ✅ Native | ⚠️ Limited | ✅ Multi-threaded | ⚠️ Limited |
 | **Modern Data Codecs** (Zstandard, LZ4) | ✅ Built-in | ❌ No | ❌ (requires plugin) | ⚠️ Partial |
 | **Data Engineering Benchmark Suite** | ✅ Built-in | ❌ No | ⚠️ CPU only | ❌ No |
 | **Pareto-Optimal Frontier Analysis** | ✅ Built-in | ❌ No | ❌ No | ❌ No |
 | **Damaged ZIP Central Directory Repair** | ✅ Local Header Scan | ⚠️ Basic | ❌ No | ⚠️ Basic |
+| **Folder Compression & Drag-and-Drop** | ✅ Yes | ✅ Yes | ✅ Yes | ✅ Yes |
 | **AES-256 WinZip AE-2 / 7z Encryption** | ✅ Yes | ✅ Yes | ✅ Yes | ✅ Yes |
 | **Unified CLI (`arkive`)** | ✅ Built-in | ⚠️ Command prompt | ✅ `7z` | ⚠️ Scriptable |
 

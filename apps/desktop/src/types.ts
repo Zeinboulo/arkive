@@ -37,6 +37,31 @@ export interface ExternalAction {
   path: string;
 }
 
+export interface CreateArchiveOptions {
+  archive: string;
+  inputs: string[];
+  format: ArchiveFormat;
+  level: number;
+  password?: string | null;
+  threads?: number;
+  method?: string;
+}
+
+export interface ExtractArchiveOptions {
+  archive: string;
+  dest?: string;
+  password?: string | null;
+  force?: boolean;
+}
+
+export interface BenchConfig {
+  dataset?: string;
+  sizeMb?: number;
+  threads?: number;
+  codecs?: string[];
+  levels?: number[];
+}
+
 export interface ArchiveInfo {
   path: string;
   format: ArchiveFormat;
@@ -119,8 +144,8 @@ declare global {
       // Archive Operations
       listArchive: (path: string, password?: string | null) => Promise<Entry[]>;
       getArchiveInfo: (path: string, password?: string | null) => Promise<ArchiveInfo>;
-      createArchive: (options: any) => Promise<string>;
-      extractArchive: (options: any) => Promise<string>;
+      createArchive: (options: CreateArchiveOptions) => Promise<string>;
+      extractArchive: (options: ExtractArchiveOptions) => Promise<string>;
       testArchive: (path: string, password?: string | null) => Promise<string>;
       repairArchive: (archive: string, output?: string | null) => Promise<RepairReport>;
       readEntry: (
@@ -129,7 +154,7 @@ declare global {
         password?: string | null,
         maxBytes?: number
       ) => Promise<string>;
-      runBenchmark: (config: any) => Promise<BenchReport>;
+      runBenchmark: (config: BenchConfig) => Promise<BenchReport>;
     };
   }
 }

@@ -2,8 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { Toolbar } from './components/Toolbar';
 import { FileBrowser } from './components/FileBrowser';
 import { BenchmarkView } from './components/BenchmarkView';
-import { CreateModal } from './components/CreateModal';
-import { ExtractModal } from './components/ExtractModal';
+import { CreateModal, CreateModalSubmitData } from './components/CreateModal';
+import { ExtractModal, ExtractModalSubmitData } from './components/ExtractModal';
 import { RepairModal } from './components/RepairModal';
 import { PreviewModal } from './components/PreviewModal';
 import { InfoModal } from './components/InfoModal';
@@ -13,6 +13,7 @@ import {
   FsItem,
   QuickPlace,
   ArchiveInfo,
+  BenchConfig,
   BenchReport,
   ProgressUpdate,
   RepairReport,
@@ -173,7 +174,7 @@ export const App: React.FC = () => {
     setIsCreateOpen(true);
   };
 
-  const handleCreateSubmit = async (opts: any) => {
+  const handleCreateSubmit = async (opts: CreateModalSubmitData) => {
     if (!window.arkive?.saveArchiveDialog || !window.arkive?.createArchive) return;
     try {
       const savePath = await window.arkive.saveArchiveDialog(opts.name);
@@ -217,7 +218,7 @@ export const App: React.FC = () => {
     alert('Please select or open an archive to extract.');
   };
 
-  const handleExtractSubmit = async (opts: any) => {
+  const handleExtractSubmit = async (opts: ExtractModalSubmitData) => {
     if (!window.arkive?.extractArchive || !currentArchive) return;
     try {
       setStatusMessage(`Extracting to ${opts.dest}...`);
@@ -282,7 +283,7 @@ export const App: React.FC = () => {
     setIsPreviewLoading(false);
   };
 
-  const handleRunBench = async (config: any) => {
+  const handleRunBench = async (config: BenchConfig) => {
     setIsBenchRunning(true);
     setBenchProgressMsg('Running Rust benchmark engine on dataset...');
 

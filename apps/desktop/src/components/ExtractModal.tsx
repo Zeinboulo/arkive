@@ -1,10 +1,16 @@
 import React, { useState } from 'react';
 import { X, Download, Folder, Lock, Check } from 'lucide-react';
 
+export interface ExtractModalSubmitData {
+  dest: string;
+  password?: string | null;
+  overwrite: boolean;
+}
+
 interface ExtractModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onSubmit: (options: any) => void;
+  onSubmit: (options: ExtractModalSubmitData) => void;
   archivePath: string;
   isEncrypted: boolean;
 }
