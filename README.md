@@ -2,13 +2,13 @@
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
 [![Rust](https://img.shields.io/badge/Rust-1.70+-orange.svg)](https://www.rust-lang.org/)
-[![Tauri](https://img.shields.io/badge/Tauri-v2-24C8DB.svg)](https://tauri.app/)
+[![Electron](https://img.shields.io/badge/Electron-Desktop-47848F.svg)](https://www.electronjs.org/)
 [![React](https://img.shields.io/badge/React-18-61DAFB.svg)](https://react.dev/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.6-3178C6.svg)](https://www.typescriptlang.org/)
 
 **Arkive** is an open-source, high-performance archive manager, systems compression engine, and data engineering toolkit designed as a modern alternative to legacy tools like WinRAR and 7-Zip.
 
-Built with a **Rust systems core**, a unified CLI, and a desktop UI powered by **Tauri and React**, Arkive delivers multi-threaded compression, automated ZIP corruption repair, and a compression benchmark suite tailored for data engineers.
+Built with a **Rust systems core**, a unified CLI, and a desktop UI powered by **Electron and React**, Arkive delivers multi-threaded compression, automated ZIP corruption repair, and a compression benchmark suite tailored for data engineers.
 
 ---
 
@@ -17,11 +17,11 @@ Built with a **Rust systems core**, a unified CLI, and a desktop UI powered by *
 ```
                       ┌────────────────────────────────────────┐
                       │    React + TypeScript Desktop UI       │
-                      │  (Tailwind CSS, Lucide, Webview2)      │
+                      │  (Tailwind CSS, Lucide, Framer UI)     │
                       └──────────────────┬─────────────────────┘
-                                         │ Tauri IPC
+                                         │ Electron IPC
                       ┌──────────────────▼─────────────────────┐
-                      │           arkive-cli / Tauri           │
+                      │           arkive-cli / Engine          │
                       │      (clap, multi-progress, Tabled)    │
                       └──────────────────┬─────────────────────┘
                                          │
