@@ -68,7 +68,13 @@ pub fn fmt_ymdhm(y: i32, mo: u8, d: u8, h: u8, mi: u8) -> String {
 /// Formats a unix timestamp (seconds, UTC) as `YYYY-MM-DD HH:MM`.
 pub fn fmt_unix(ts: i64) -> Option<String> {
     let t = time::OffsetDateTime::from_unix_timestamp(ts).ok()?;
-    Some(fmt_ymdhm(t.year(), t.month() as u8, t.day(), t.hour(), t.minute()))
+    Some(fmt_ymdhm(
+        t.year(),
+        t.month() as u8,
+        t.day(),
+        t.hour(),
+        t.minute(),
+    ))
 }
 
 /// Converts calendar fields (UTC) to a unix timestamp.
@@ -76,7 +82,11 @@ pub fn ymdhms_to_unix(y: i32, mo: u8, d: u8, h: u8, mi: u8, s: u8) -> Option<i64
     let month = time::Month::try_from(mo).ok()?;
     let date = time::Date::from_calendar_date(y, month, d).ok()?;
     let t = time::Time::from_hms(h, mi, s.min(59)).ok()?;
-    Some(time::PrimitiveDateTime::new(date, t).assume_utc().unix_timestamp())
+    Some(
+        time::PrimitiveDateTime::new(date, t)
+            .assume_utc()
+            .unix_timestamp(),
+    )
 }
 
 /// Decodes a packed MS-DOS date/time (as used by ZIP and RAR headers).
@@ -110,8 +120,14 @@ mod tests {
         assert!(safe_join(d, "../evil.txt").is_none());
         assert!(safe_join(d, "a/../../evil.txt").is_none());
         assert!(safe_join(d, "C:/Windows/evil.txt").is_none());
-        assert_eq!(safe_join(d, "/a/b.txt"), Some(Path::new("out").join("a").join("b.txt")));
-        assert_eq!(safe_join(d, "a\\b.txt"), Some(Path::new("out").join("a").join("b.txt")));
+        assert_eq!(
+            safe_join(d, "/a/b.txt"),
+            Some(Path::new("out").join("a").join("b.txt"))
+        );
+        assert_eq!(
+            safe_join(d, "a\\b.txt"),
+            Some(Path::new("out").join("a").join("b.txt"))
+        );
     }
 
     #[test]

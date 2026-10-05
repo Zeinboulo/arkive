@@ -1,6 +1,6 @@
 [workspace]
 resolver = "2"
-members = ["crates/arkive-core", "crates/arkive-cli", "apps/desktop/src-tauri"]
+members = ["crates/arkive-core", "crates/arkive-cli"]
 
 [workspace.package]
 version = "0.1.0"

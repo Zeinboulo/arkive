@@ -29,10 +29,7 @@ pub fn collect(inputs: &[PathBuf], exclude: Option<&Path>) -> Result<Vec<InputIt
     for input in inputs {
         let input = std::fs::canonicalize(input)?;
         let base = input.parent().map(Path::to_path_buf).unwrap_or_default();
-        for entry in WalkDir::new(&input)
-            .follow_links(true)
-            .sort_by_file_name()
-        {
+        for entry in WalkDir::new(&input).follow_links(true).sort_by_file_name() {
             let entry = entry?;
             let path = entry.path();
             if exclude.as_deref() == Some(path) {

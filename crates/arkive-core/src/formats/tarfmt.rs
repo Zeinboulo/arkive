@@ -27,9 +27,10 @@ impl TarWriter {
         let level = level.min(9);
         Ok(match format {
             Format::Tar => TarWriter::Plain(out),
-            Format::TarGz => {
-                TarWriter::Gz(flate2::write::GzEncoder::new(out, flate2::Compression::new(level)))
-            }
+            Format::TarGz => TarWriter::Gz(flate2::write::GzEncoder::new(
+                out,
+                flate2::Compression::new(level),
+            )),
             Format::TarBz2 => TarWriter::Bz2(bzip2::write::BzEncoder::new(
                 out,
                 bzip2::Compression::new(level.max(1)),
@@ -105,7 +106,8 @@ pub fn create(
     for item in items {
         t.check_cancel()?;
         if item.is_dir {
-            b.append_dir(&item.name, &item.abs).map_err(Error::from_io)?;
+            b.append_dir(&item.name, &item.abs)
+                .map_err(Error::from_io)?;
         } else {
             let file = File::open(&item.abs)?;
             let meta = file.metadata()?;
@@ -160,7 +162,13 @@ pub fn list(path: &Path, format: Format) -> Result<Vec<Entry>> {
     Ok(out)
 }
 
-pub fn extract(path: &Path, format: Format, dest: &Path, opts: &ExtractOptions, t: &Tracker) -> Result<Counts> {
+pub fn extract(
+    path: &Path,
+    format: Format,
+    dest: &Path,
+    opts: &ExtractOptions,
+    t: &Tracker,
+) -> Result<Counts> {
     let mut ar = tar::Archive::new(open(path, format, t)?);
     ar.set_preserve_mtime(true);
     ar.set_overwrite(true);
@@ -200,20 +208,34 @@ pub fn test(path: &Path, format: Format, t: &Tracker) -> Result<(u64, Vec<TestFa
     let mut ar = tar::Archive::new(open(path, format, t)?);
     let entries = match ar.entries() {
         Ok(e) => e,
-        Err(e) => return Ok((0, vec![TestFailure { path: "<archive>".into(), error: e.to_string() }])),
+        Err(e) => {
+            return Ok((
+                0,
+                vec![TestFailure {
+                    path: "<archive>".into(),
+                    error: e.to_string(),
+                }],
+            ))
+        }
     };
     for e in entries {
         t.check_cancel()?;
         match e {
             Ok(mut e) => {
-                let name = e.path().map(|p| p.to_string_lossy().to_string()).unwrap_or_default();
+                let name = e
+                    .path()
+                    .map(|p| p.to_string_lossy().to_string())
+                    .unwrap_or_default();
                 tested += 1;
                 if let Err(err) = io::copy(&mut e, &mut io::sink()) {
                     let err = Error::from_io(err);
                     if matches!(err, Error::Cancelled) {
                         return Err(err);
                     }
-                    failures.push(TestFailure { path: name, error: err.to_string() });
+                    failures.push(TestFailure {
+                        path: name,
+                        error: err.to_string(),
+                    });
                     break; // a broken stream can't be resynchronized
                 }
             }
@@ -222,7 +244,10 @@ pub fn test(path: &Path, format: Format, t: &Tracker) -> Result<(u64, Vec<TestFa
                 if matches!(err, Error::Cancelled) {
                     return Err(err);
                 }
-                failures.push(TestFailure { path: "<stream>".into(), error: err.to_string() });
+                failures.push(TestFailure {
+                    path: "<stream>".into(),
+                    error: err.to_string(),
+                });
                 break;
             }
         }

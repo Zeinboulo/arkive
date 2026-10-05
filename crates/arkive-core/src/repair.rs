@@ -47,12 +47,16 @@ fn u16_at(d: &[u8], o: usize) -> Option<u16> {
     d.get(o..o + 2).map(|b| u16::from_le_bytes([b[0], b[1]]))
 }
 fn u32_at(d: &[u8], o: usize) -> Option<u32> {
-    d.get(o..o + 4).map(|b| u32::from_le_bytes([b[0], b[1], b[2], b[3]]))
+    d.get(o..o + 4)
+        .map(|b| u32::from_le_bytes([b[0], b[1], b[2], b[3]]))
 }
 
 fn find_sig(d: &[u8], from: usize, sig: u32) -> Option<usize> {
     let s = sig.to_le_bytes();
-    d.get(from..)?.windows(4).position(|w| w == s).map(|p| p + from)
+    d.get(from..)?
+        .windows(4)
+        .position(|w| w == s)
+        .map(|p| p + from)
 }
 
 fn parse_local(d: &[u8], off: usize) -> Option<Recovered> {
@@ -147,7 +151,9 @@ fn verify(e: &Recovered, d: &[u8]) -> Verify {
 pub fn repair_zip(input: &Path, output: &Path) -> Result<RepairReport> {
     let d = std::fs::read(input)?;
     if d.len() > u32::MAX as usize {
-        return Err(Error::Other("repair of archives larger than 4 GiB is not supported".into()));
+        return Err(Error::Other(
+            "repair of archives larger than 4 GiB is not supported".into(),
+        ));
     }
 
     let mut found = Vec::new();
@@ -176,7 +182,9 @@ pub fn repair_zip(input: &Path, output: &Path) -> Result<RepairReport> {
             Verify::Ok => report.verified += 1,
             Verify::Unverifiable => report.unverifiable += 1,
             Verify::Bad => {
-                report.dropped.push(String::from_utf8_lossy(&e.name).into_owned());
+                report
+                    .dropped
+                    .push(String::from_utf8_lossy(&e.name).into_owned());
                 continue;
             }
         }

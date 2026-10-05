@@ -87,7 +87,13 @@ declare global {
       createArchive: (options: any) => Promise<string>;
       extractArchive: (options: any) => Promise<string>;
       testArchive: (path: string, password?: string | null) => Promise<string>;
-      repairArchive: (archive: string, output?: string | null) => Promise<string>;
+      repairArchive: (archive: string, output?: string | null) => Promise<RepairReport>;
+      readEntry: (
+        path: string,
+        entry: string,
+        password?: string | null,
+        maxBytes?: number
+      ) => Promise<string>;
       runBenchmark: (config: any) => Promise<BenchReport>;
     };
   }

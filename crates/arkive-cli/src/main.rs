@@ -2,12 +2,13 @@ use anyhow::{Context, Result};
 use arkive_core::bench::{self, BenchConfig, Dataset};
 use arkive_core::codec::Codec;
 use arkive_core::{
-    create, extract, info, list, repair, test, CreateOptions,
-    ExtractOptions, Format, Progress, ZipMethod,
+    create, extract, info, list, read_entry, repair, test, CreateOptions, ExtractOptions, Format,
+    Progress, ZipMethod,
 };
 use clap::{Args, Parser, Subcommand};
 use colored::Colorize;
 use indicatif::{ProgressBar, ProgressStyle};
+use std::io::Write;
 use std::path::PathBuf;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
@@ -38,8 +39,15 @@ enum Commands {
     #[command(name = "t", alias = "test", about = "Test integrity of archive")]
     Test(TestArgs),
 
-    #[command(name = "i", alias = "info", about = "Display detailed archive metadata")]
+    #[command(
+        name = "i",
+        alias = "info",
+        about = "Display detailed archive metadata"
+    )]
     Info(InfoArgs),
+
+    #[command(name = "cat", about = "Print a single archive entry to stdout")]
+    Cat(CatArgs),
 
     #[command(name = "repair", about = "Attempt to repair a corrupted ZIP archive")]
     Repair(RepairArgs),
@@ -145,6 +153,27 @@ struct RepairArgs {
     /// Output repaired archive path (defaults to <archive>.repaired.zip)
     #[arg(short, long)]
     output: Option<PathBuf>,
+
+    /// Output the repair report as JSON
+    #[arg(long)]
+    json: bool,
+}
+
+#[derive(Args, Debug)]
+struct CatArgs {
+    /// Archive file path
+    archive: PathBuf,
+
+    /// Path of the entry inside the archive
+    entry: String,
+
+    /// Password for encrypted archive
+    #[arg(short, long)]
+    password: Option<String>,
+
+    /// Maximum number of bytes to read
+    #[arg(long, default_value_t = 262_144)]
+    max_bytes: usize,
 }
 
 #[derive(Args, Debug)]
@@ -255,6 +284,7 @@ fn main() -> Result<()> {
         Commands::List(args) => handle_list(args),
         Commands::Test(args) => handle_test(args),
         Commands::Info(args) => handle_info(args),
+        Commands::Cat(args) => handle_cat(args),
         Commands::Repair(args) => handle_repair(args),
         Commands::Bench(args) => handle_bench(args),
     }
@@ -368,9 +398,16 @@ fn handle_list(args: ListArgs) -> Result<()> {
             } else {
                 format_bytes(e.size)
             },
-            packed: e.compressed_size.map(format_bytes).unwrap_or_else(|| "-".into()),
+            packed: e
+                .compressed_size
+                .map(format_bytes)
+                .unwrap_or_else(|| "-".into()),
             modified: e.modified.clone().unwrap_or_else(|| "-".into()),
-            encrypted: if e.encrypted { "Yes".red().to_string() } else { "No".into() },
+            encrypted: if e.encrypted {
+                "Yes".red().to_string()
+            } else {
+                "No".into()
+            },
         })
         .collect();
 
@@ -383,7 +420,11 @@ fn handle_list(args: ListArgs) -> Result<()> {
 }
 
 fn handle_test(args: TestArgs) -> Result<()> {
-    println!("{} Testing archive integrity: {}", "==>".bold().green(), args.archive.display());
+    println!(
+        "{} Testing archive integrity: {}",
+        "==>".bold().green(),
+        args.archive.display()
+    );
 
     let progress = CliProgress::new("Verifying...");
     let report = test(&args.archive, args.password.as_deref(), &progress)?;
@@ -420,15 +461,31 @@ fn handle_info(args: InfoArgs) -> Result<()> {
 
     println!("{}", "Archive Information:".bold());
     println!("  Path:         {}", archive_info.path);
-    println!("  Format:       {}", archive_info.format_label.green().bold());
-    println!("  Archive Size: {}", format_bytes(archive_info.archive_size));
-    println!("  Files / Dirs: {} / {}", archive_info.files, archive_info.dirs);
+    println!(
+        "  Format:       {}",
+        archive_info.format_label.green().bold()
+    );
+    println!(
+        "  Archive Size: {}",
+        format_bytes(archive_info.archive_size)
+    );
+    println!(
+        "  Files / Dirs: {} / {}",
+        archive_info.files, archive_info.dirs
+    );
     println!("  Total Size:   {}", format_bytes(archive_info.total_size));
     if let Some(packed) = archive_info.packed_size {
         println!("  Packed Size:  {}", format_bytes(packed));
     }
     println!("  Ratio:        {:.1}%", archive_info.ratio * 100.0);
-    println!("  Encrypted:    {}", if archive_info.encrypted { "Yes".red() } else { "No".normal() });
+    println!(
+        "  Encrypted:    {}",
+        if archive_info.encrypted {
+            "Yes".red()
+        } else {
+            "No".normal()
+        }
+    );
 
     Ok(())
 }
@@ -438,12 +495,17 @@ fn handle_repair(args: RepairArgs) -> Result<()> {
         .output
         .unwrap_or_else(|| repair::suggest_output(&args.archive));
 
-    println!(
+    eprintln!(
         "{} Scanning damaged ZIP and rebuilding central directory...",
         "==>".bold().yellow()
     );
 
     let report = repair::repair_zip(&args.archive, &out)?;
+
+    if args.json {
+        println!("{}", serde_json::to_string_pretty(&report)?);
+        return Ok(());
+    }
 
     println!(
         "{} Recovered {} of {} entries into {}",
@@ -459,6 +521,17 @@ fn handle_repair(args: RepairArgs) -> Result<()> {
         report.dropped.len()
     );
 
+    Ok(())
+}
+
+fn handle_cat(args: CatArgs) -> Result<()> {
+    let data = read_entry(
+        &args.archive,
+        &args.entry,
+        args.password.as_deref(),
+        args.max_bytes,
+    )?;
+    std::io::stdout().write_all(&data)?;
     Ok(())
 }
 
@@ -547,7 +620,11 @@ fn handle_bench(args: BenchArgs) -> Result<()> {
             savings: format!("{:.1}%", r.saving_pct),
             comp_speed: format!("{:.1}", r.compress_mb_s),
             decomp_speed: format!("{:.1}", r.decompress_mb_s),
-            pareto: if r.pareto { "★ Best".yellow().bold().to_string() } else { "".into() },
+            pareto: if r.pareto {
+                "★ Best".yellow().bold().to_string()
+            } else {
+                "".into()
+            },
         })
         .collect();
 
@@ -558,7 +635,11 @@ fn handle_bench(args: BenchArgs) -> Result<()> {
     if let Some(csv_path) = args.csv {
         let csv_data = bench::to_csv(&report.results);
         std::fs::write(&csv_path, csv_data)?;
-        println!("{} Benchmark exported to {}", "✓".bold().green(), csv_path.display());
+        println!(
+            "{} Benchmark exported to {}",
+            "✓".bold().green(),
+            csv_path.display()
+        );
     }
 
     Ok(())

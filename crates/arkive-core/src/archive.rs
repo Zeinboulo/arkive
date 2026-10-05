@@ -172,7 +172,11 @@ pub fn info(archive: &Path, password: Option<&str>) -> Result<ArchiveInfo> {
         dirs: entries.len() as u64 - files,
         total_size,
         packed_size: packed,
-        ratio: if total_size == 0 { 1.0 } else { archive_size as f64 / total_size as f64 },
+        ratio: if total_size == 0 {
+            1.0
+        } else {
+            archive_size as f64 / total_size as f64
+        },
         encrypted: entries.iter().any(|e| e.encrypted),
         can_add: format.can_create(),
     })
@@ -290,7 +294,12 @@ pub fn test(archive: &Path, password: Option<&str>, progress: &dyn Progress) -> 
 }
 
 /// Reads (up to `max_bytes` of) a single entry into memory, e.g. for previews.
-pub fn read_entry(archive: &Path, name: &str, password: Option<&str>, max_bytes: usize) -> Result<Vec<u8>> {
+pub fn read_entry(
+    archive: &Path,
+    name: &str,
+    password: Option<&str>,
+    max_bytes: usize,
+) -> Result<Vec<u8>> {
     let password = password.filter(|p| !p.is_empty());
     match detect(archive)? {
         Format::Zip => zipfmt::read_entry(archive, name, password, max_bytes),
@@ -310,12 +319,23 @@ pub(crate) fn mb_per_s(bytes: u64, secs: f64) -> f64 {
 
 /// Suggests an output archive path for a set of inputs, e.g. `C:\data\logs` → `C:\data\logs.zip`.
 pub fn suggest_output(inputs: &[PathBuf], format: Format) -> PathBuf {
-    let first = inputs.first().cloned().unwrap_or_else(|| PathBuf::from("archive"));
+    let first = inputs
+        .first()
+        .cloned()
+        .unwrap_or_else(|| PathBuf::from("archive"));
     let parent = first.parent().map(Path::to_path_buf).unwrap_or_default();
     let stem = if inputs.len() == 1 {
-        let name = first.file_name().unwrap_or_default().to_string_lossy().to_string();
+        let name = first
+            .file_name()
+            .unwrap_or_default()
+            .to_string_lossy()
+            .to_string();
         if first.is_file() {
-            Path::new(&name).file_stem().unwrap_or_default().to_string_lossy().to_string()
+            Path::new(&name)
+                .file_stem()
+                .unwrap_or_default()
+                .to_string_lossy()
+                .to_string()
         } else {
             name
         }
@@ -330,17 +350,29 @@ pub fn suggest_output(inputs: &[PathBuf], format: Format) -> PathBuf {
 
 /// Suggests an extraction folder, e.g. `C:\dl\photos.tar.gz` → `C:\dl\photos`.
 pub fn suggest_extract_dir(archive: &Path) -> PathBuf {
-    let name = archive.file_name().unwrap_or_default().to_string_lossy().to_string();
+    let name = archive
+        .file_name()
+        .unwrap_or_default()
+        .to_string_lossy()
+        .to_string();
     let stem = match Format::from_path(archive) {
         Some(f) => {
             let ext = format!(".{}", f.extension());
             if name.to_lowercase().ends_with(&ext) {
                 name[..name.len() - ext.len()].to_string()
             } else {
-                Path::new(&name).file_stem().unwrap_or_default().to_string_lossy().to_string()
+                Path::new(&name)
+                    .file_stem()
+                    .unwrap_or_default()
+                    .to_string_lossy()
+                    .to_string()
             }
         }
-        None => Path::new(&name).file_stem().unwrap_or_default().to_string_lossy().to_string(),
+        None => Path::new(&name)
+            .file_stem()
+            .unwrap_or_default()
+            .to_string_lossy()
+            .to_string(),
     };
     archive.with_file_name(stem)
 }

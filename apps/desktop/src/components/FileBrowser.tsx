@@ -216,7 +216,16 @@ export const FileBrowser: React.FC<FileBrowserProps> = ({
         {currentItems.length === 0 ? (
           <div className="h-full flex flex-col items-center justify-center text-slate-500 text-sm p-8">
             <Folder className="w-12 h-12 text-slate-700 mb-2 stroke-[1.5]" />
-            <p>No files found in this folder</p>
+            <p className="font-medium text-slate-400">
+              {entries.length === 0
+                ? 'No archive loaded'
+                : 'No files found in this folder'}
+            </p>
+            {entries.length === 0 && (
+              <p className="text-xs text-slate-500 mt-1">
+                Click <span className="text-sky-400 font-semibold">Open</span> above to browse an archive, or <span className="text-emerald-400 font-semibold">Add</span> to create one.
+              </p>
+            )}
           </div>
         ) : (
           currentItems.map((item) => {

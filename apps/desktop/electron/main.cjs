@@ -191,8 +191,16 @@ ipcMain.handle('arkive:test', async (_, { path: archivePath, password }) => {
 });
 
 ipcMain.handle('arkive:repair', async (_, { archive, output }) => {
-  const args = ['repair', archive];
+  const args = ['repair', archive, '--json'];
   if (output) args.push('-o', output);
+  const { stdout } = await runArkive(args);
+  return parseJson(stdout);
+});
+
+ipcMain.handle('arkive:cat', async (_, { path: archivePath, entry, password, maxBytes }) => {
+  const args = ['cat', archivePath, entry];
+  if (password) args.push('-p', password);
+  if (maxBytes) args.push('--max-bytes', maxBytes.toString());
   const { stdout } = await runArkive(args);
   return stdout;
 });
@@ -204,5 +212,6 @@ ipcMain.handle('arkive:bench', async (_, config) => {
   if (config.threads !== undefined) args.push('-t', config.threads.toString());
   if (config.codecs && config.codecs.length > 0) args.push('-c', config.codecs.join(','));
   const { stdout } = await runArkive(args);
-  return JSON.parse(stdout);
+  return parseJson(stdout);
 });
+

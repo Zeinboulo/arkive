@@ -110,8 +110,12 @@ fn flush_batch<W: Write + io::Seek>(
     if batch.is_empty() {
         return Ok(());
     }
-    let parts: Vec<Result<Vec<u8>>> =
-        pool.install(|| batch.par_iter().map(|item| compress_one(item, opts, t)).collect());
+    let parts: Vec<Result<Vec<u8>>> = pool.install(|| {
+        batch
+            .par_iter()
+            .map(|item| compress_one(item, opts, t))
+            .collect()
+    });
     for part in parts {
         let mut single = ZipArchive::new(Cursor::new(part?))?;
         let entry = single.by_index_raw(0)?;
@@ -136,11 +140,24 @@ fn open(path: &Path) -> Result<ZipArchive<BufReader<File>>> {
 }
 
 fn dt_string(dt: zip::DateTime) -> String {
-    fmt_ymdhm(dt.year() as i32, dt.month(), dt.day(), dt.hour(), dt.minute())
+    fmt_ymdhm(
+        dt.year() as i32,
+        dt.month(),
+        dt.day(),
+        dt.hour(),
+        dt.minute(),
+    )
 }
 
 fn dt_unix(dt: zip::DateTime) -> Option<i64> {
-    ymdhms_to_unix(dt.year() as i32, dt.month(), dt.day(), dt.hour(), dt.minute(), dt.second())
+    ymdhms_to_unix(
+        dt.year() as i32,
+        dt.month(),
+        dt.day(),
+        dt.hour(),
+        dt.minute(),
+        dt.second(),
+    )
 }
 
 pub fn list(path: &Path) -> Result<Vec<Entry>> {
@@ -239,8 +256,13 @@ pub fn test(path: &Path, password: Option<&str>, t: &Tracker) -> Result<(u64, Ve
             .and_then(|mut f| copy_with_progress(&mut f, &mut io::sink(), t, &name));
         match res {
             Ok(_) => {}
-            Err(e @ (Error::Cancelled | Error::PasswordRequired | Error::WrongPassword)) => return Err(e),
-            Err(e) => failures.push(TestFailure { path: name, error: e.to_string() }),
+            Err(e @ (Error::Cancelled | Error::PasswordRequired | Error::WrongPassword)) => {
+                return Err(e)
+            }
+            Err(e) => failures.push(TestFailure {
+                path: name,
+                error: e.to_string(),
+            }),
         }
         tested += 1;
     }

@@ -51,7 +51,7 @@ pub(crate) const CANCEL_MSG: &str = "arkive:cancelled";
 
 /// NOTE: must NOT be `ErrorKind::Interrupted` — `std::io::copy` silently retries those.
 pub(crate) fn cancelled_io() -> io::Error {
-    io::Error::new(io::ErrorKind::Other, CANCEL_MSG)
+    io::Error::other(CANCEL_MSG)
 }
 
 /// Libraries often re-wrap I/O errors with extra context, so match on the message.

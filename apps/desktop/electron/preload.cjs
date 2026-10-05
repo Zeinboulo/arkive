@@ -13,5 +13,6 @@ contextBridge.exposeInMainWorld('arkive', {
   extractArchive: (options) => ipcRenderer.invoke('arkive:extract', options),
   testArchive: (path, password) => ipcRenderer.invoke('arkive:test', { path, password }),
   repairArchive: (archive, output) => ipcRenderer.invoke('arkive:repair', { archive, output }),
+  readEntry: (path, entry, password, maxBytes) => ipcRenderer.invoke('arkive:cat', { path, entry, password, maxBytes }),
   runBenchmark: (config) => ipcRenderer.invoke('arkive:bench', config),
 });

@@ -20,7 +20,13 @@ pub fn zstd_level(level: u32) -> i32 {
 }
 
 impl Codec {
-    pub const ALL: [Codec; 5] = [Codec::Deflate, Codec::Bzip2, Codec::Xz, Codec::Zstd, Codec::Lz4];
+    pub const ALL: [Codec; 5] = [
+        Codec::Deflate,
+        Codec::Bzip2,
+        Codec::Xz,
+        Codec::Zstd,
+        Codec::Lz4,
+    ];
 
     pub fn label(self) -> &'static str {
         match self {
@@ -134,12 +140,18 @@ mod tests {
 
     #[test]
     fn every_codec_roundtrips() {
-        let data: Vec<u8> = (0..200_000u32).flat_map(|i| (i % 251).to_le_bytes()).collect();
+        let data: Vec<u8> = (0..200_000u32)
+            .flat_map(|i| (i % 251).to_le_bytes())
+            .collect();
         for c in Codec::ALL {
             for threads in [1, 4] {
                 let z = c.compress(&data, 5, threads).unwrap();
                 assert!(z.len() < data.len(), "{c:?} did not compress");
-                assert_eq!(c.decompress(&z, data.len()).unwrap(), data, "{c:?} roundtrip");
+                assert_eq!(
+                    c.decompress(&z, data.len()).unwrap(),
+                    data,
+                    "{c:?} roundtrip"
+                );
             }
         }
     }

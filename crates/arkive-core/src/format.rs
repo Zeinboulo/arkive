@@ -150,10 +150,16 @@ mod tests {
 
     #[test]
     fn detects_by_extension() {
-        assert_eq!(Format::from_path(Path::new("a/b.TAR.GZ")), Some(Format::TarGz));
+        assert_eq!(
+            Format::from_path(Path::new("a/b.TAR.GZ")),
+            Some(Format::TarGz)
+        );
         assert_eq!(Format::from_path(Path::new("a.tgz")), Some(Format::TarGz));
         assert_eq!(Format::from_path(Path::new("x.7z")), Some(Format::SevenZ));
-        assert_eq!(Format::from_path(Path::new("x.tar.zst")), Some(Format::TarZst));
+        assert_eq!(
+            Format::from_path(Path::new("x.tar.zst")),
+            Some(Format::TarZst)
+        );
         assert_eq!(Format::from_path(Path::new("x.txt")), None);
         assert_eq!(Format::parse("tar.xz"), Some(Format::TarXz));
     }

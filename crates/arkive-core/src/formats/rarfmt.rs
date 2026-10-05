@@ -2,8 +2,8 @@
 //! Uses the official UnRAR library via the `unrar` crate.
 
 use crate::archive::{Counts, Entry, ExtractOptions, TestFailure};
-use crate::util::{dos_to_unix, fmt_unix, is_selected, normalize_name, safe_join};
 use crate::progress::Tracker;
+use crate::util::{dos_to_unix, fmt_unix, is_selected, normalize_name, safe_join};
 use crate::{Error, Result};
 use std::path::Path;
 use unrar::error::{Code, UnrarError};
@@ -27,7 +27,9 @@ fn archive<'a>(path: &'a Path, pw: &'a Option<String>) -> unrar::Archive<'a> {
 
 fn header_to_entry(h: &unrar::FileHeader) -> Entry {
     Entry {
-        path: normalize_name(&h.filename.to_string_lossy()).trim_end_matches('/').to_string(),
+        path: normalize_name(&h.filename.to_string_lossy())
+            .trim_end_matches('/')
+            .to_string(),
         size: h.unpacked_size,
         compressed_size: None,
         is_dir: h.is_directory(),
@@ -62,23 +64,26 @@ pub fn extract(path: &Path, dest: &Path, opts: &ExtractOptions, t: &Tracker) -> 
         let e = header_to_entry(h.entry());
         let wanted = is_selected(&e.path, &opts.selection);
         let target = safe_join(dest, &e.path);
-        a = if !wanted || target.is_none() {
-            h.skip().map_err(map_err)?
-        } else if e.is_dir {
-            c.dirs += 1;
-            std::fs::create_dir_all(target.unwrap())?;
-            h.skip().map_err(map_err)?
-        } else if target.as_ref().is_some_and(|p| p.exists()) && !opts.overwrite {
-            c.skipped += 1;
-            t.add(e.size, &e.path);
-            h.skip().map_err(map_err)?
-        } else {
-            t.add(0, &e.path);
-            let next = h.extract_with_base(dest).map_err(map_err)?;
-            t.add(e.size, &e.path);
-            c.files += 1;
-            c.bytes += e.size;
-            next
+        a = match target {
+            Some(target) if wanted => {
+                if e.is_dir {
+                    c.dirs += 1;
+                    std::fs::create_dir_all(target)?;
+                    h.skip().map_err(map_err)?
+                } else if target.exists() && !opts.overwrite {
+                    c.skipped += 1;
+                    t.add(e.size, &e.path);
+                    h.skip().map_err(map_err)?
+                } else {
+                    t.add(0, &e.path);
+                    let next = h.extract_with_base(dest).map_err(map_err)?;
+                    t.add(e.size, &e.path);
+                    c.files += 1;
+                    c.bytes += e.size;
+                    next
+                }
+            }
+            _ => h.skip().map_err(map_err)?,
         };
     }
     Ok(c)
@@ -109,7 +114,10 @@ pub fn test(path: &Path, pw: Option<&str>, t: &Tracker) -> Result<(u64, Vec<Test
                 if matches!(err, Error::WrongPassword | Error::PasswordRequired) {
                     return Err(err);
                 }
-                failures.push(TestFailure { path: e.path, error: err.to_string() });
+                failures.push(TestFailure {
+                    path: e.path,
+                    error: err.to_string(),
+                });
                 break;
             }
         }

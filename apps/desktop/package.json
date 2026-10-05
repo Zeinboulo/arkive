@@ -13,19 +13,32 @@
     "app": "electron .",
     "start": "tsc && vite build && electron .",
     "predist": "cargo build --release -p arkive-cli && node -e \"const fs=require('fs');fs.mkdirSync('bin',{recursive:true});fs.copyFileSync('../../target/release/arkive.exe','bin/arkive.exe')\"",
-    "dist": "npm run build && electron-builder --win nsis portable --publish never",
-    "tauri": "tauri"
+    "dist": "npm run build && electron-builder --win nsis portable --publish never"
   },
   "build": {
     "appId": "io.github.zeinboulo.arkive",
     "productName": "Arkive",
     "executableName": "Arkive",
-    "directories": { "output": "release" },
-    "files": ["dist/**/*", "electron/**/*", "package.json"],
-    "extraResources": [{ "from": "bin/arkive.exe", "to": "bin/arkive.exe" }],
+    "directories": {
+      "output": "release"
+    },
+    "files": [
+      "dist/**/*",
+      "electron/**/*",
+      "package.json"
+    ],
+    "extraResources": [
+      {
+        "from": "bin/arkive.exe",
+        "to": "bin/arkive.exe"
+      }
+    ],
     "win": {
-      "icon": "src-tauri/icons/icon.ico",
-      "target": ["nsis", "portable"],
+      "icon": "resources/icon.ico",
+      "target": [
+        "nsis",
+        "portable"
+      ],
       "signAndEditExecutable": false
     },
     "nsis": {
@@ -37,21 +50,16 @@
       "shortcutName": "Arkive",
       "artifactName": "Arkive-Setup-${version}.${ext}"
     },
-    "portable": { "artifactName": "Arkive-Portable-${version}.${ext}" }
+    "portable": {
+      "artifactName": "Arkive-Portable-${version}.${ext}"
+    }
   },
   "dependencies": {
-    "@tauri-apps/api": "^2.0.0",
-    "@tauri-apps/plugin-dialog": "^2.0.0",
-    "@tauri-apps/plugin-fs": "^2.0.0",
-    "@tauri-apps/plugin-shell": "^2.0.0",
-    "clsx": "^2.1.1",
     "lucide-react": "^0.460.0",
     "react": "^18.3.1",
-    "react-dom": "^18.3.1",
-    "tailwind-merge": "^2.5.4"
+    "react-dom": "^18.3.1"
   },
   "devDependencies": {
-    "@tauri-apps/cli": "^2.0.0",
     "@types/react": "^18.3.12",
     "@types/react-dom": "^18.3.1",
     "@vitejs/plugin-react": "^4.3.3",

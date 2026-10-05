@@ -167,15 +167,23 @@ pub fn test(path: &Path, pw: Option<&str>, t: &Tracker) -> Result<(u64, Vec<Test
             Ok(_) => Ok(()),
             Err(Error::Cancelled) => Err(Error::Cancelled),
             Err(e) => {
-                failures.push(TestFailure { path: name, error: e.to_string() });
+                failures.push(TestFailure {
+                    path: name,
+                    error: e.to_string(),
+                });
                 Ok(())
             }
         }
     });
     match res {
         Ok(()) => {}
-        Err(e @ (Error::Cancelled | Error::PasswordRequired | Error::WrongPassword)) => return Err(e),
-        Err(e) => failures.push(TestFailure { path: "<archive>".into(), error: e.to_string() }),
+        Err(e @ (Error::Cancelled | Error::PasswordRequired | Error::WrongPassword)) => {
+            return Err(e)
+        }
+        Err(e) => failures.push(TestFailure {
+            path: "<archive>".into(),
+            error: e.to_string(),
+        }),
     }
     Ok((tested, failures))
 }
@@ -194,6 +202,12 @@ pub fn read_entry(path: &Path, name: &str, pw: Option<&str>, max: usize) -> Resu
         io::copy(reader, &mut io::sink())?;
         Ok(())
     })
-    .or_else(|e| if matches!(e, Error::Cancelled) { Ok(()) } else { Err(e) })?;
+    .or_else(|e| {
+        if matches!(e, Error::Cancelled) {
+            Ok(())
+        } else {
+            Err(e)
+        }
+    })?;
     found.ok_or_else(|| Error::EntryNotFound(name.into()))
 }

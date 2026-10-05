@@ -165,10 +165,46 @@ pub fn generate(dataset: Dataset, bytes: usize) -> Vec<u8> {
         }
         Dataset::Text => {
             const WORDS: [&str; 40] = [
-                "the", "data", "pipeline", "of", "and", "to", "a", "stream", "in", "is", "batch",
-                "for", "that", "with", "on", "compression", "storage", "query", "as", "table",
-                "partition", "by", "file", "schema", "be", "this", "are", "from", "lake", "or",
-                "warehouse", "record", "an", "it", "column", "row", "format", "at", "which", "we",
+                "the",
+                "data",
+                "pipeline",
+                "of",
+                "and",
+                "to",
+                "a",
+                "stream",
+                "in",
+                "is",
+                "batch",
+                "for",
+                "that",
+                "with",
+                "on",
+                "compression",
+                "storage",
+                "query",
+                "as",
+                "table",
+                "partition",
+                "by",
+                "file",
+                "schema",
+                "be",
+                "this",
+                "are",
+                "from",
+                "lake",
+                "or",
+                "warehouse",
+                "record",
+                "an",
+                "it",
+                "column",
+                "row",
+                "format",
+                "at",
+                "which",
+                "we",
             ];
             while out.len() < bytes {
                 let n = rng.gen_range(6..20);
@@ -326,8 +362,19 @@ pub fn to_csv(results: &[BenchResult]) -> String {
         let _ = writeln!(
             s,
             "{:?},{},{},{},{},{},{:.4},{:.2},{:.2},{:.2},{:.2},{:.2},{}",
-            r.codec, r.level, r.native_level, r.threads, r.input_bytes, r.output_bytes, r.ratio,
-            r.saving_pct, r.compress_ms, r.decompress_ms, r.compress_mb_s, r.decompress_mb_s, r.pareto
+            r.codec,
+            r.level,
+            r.native_level,
+            r.threads,
+            r.input_bytes,
+            r.output_bytes,
+            r.ratio,
+            r.saving_pct,
+            r.compress_ms,
+            r.decompress_ms,
+            r.compress_mb_s,
+            r.decompress_mb_s,
+            r.pareto
         );
     }
     s
@@ -354,7 +401,10 @@ mod tests {
 
     #[test]
     fn datasets_are_deterministic() {
-        assert_eq!(generate(Dataset::JsonLogs, 10_000), generate(Dataset::JsonLogs, 10_000));
+        assert_eq!(
+            generate(Dataset::JsonLogs, 10_000),
+            generate(Dataset::JsonLogs, 10_000)
+        );
         assert_eq!(generate(Dataset::Mixed, 40_000).len(), 40_000);
     }
 }
