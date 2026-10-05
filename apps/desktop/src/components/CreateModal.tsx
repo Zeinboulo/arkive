@@ -1,13 +1,15 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   X,
   Archive,
   Lock,
-  Cpu,
-  Sliders,
   Eye,
   EyeOff,
-  FolderOpen,
+  FolderPlus,
+  FilePlus,
+  Folder,
+  File as FileIcon,
+  Trash2,
 } from 'lucide-react';
 import { ArchiveFormat } from '../types';
 
@@ -31,11 +33,54 @@ export const CreateModal: React.FC<CreateModalProps> = ({
   const [threads, setThreads] = useState(0);
   const [zipMethod, setZipMethod] = useState('deflate');
   const [archiveName, setArchiveName] = useState('archive');
+  const [inputs, setInputs] = useState<string[]>([]);
+
+  useEffect(() => {
+    if (isOpen) {
+      setInputs(inputPaths);
+      if (inputPaths.length > 0) {
+        // Derive default archive name from the first input
+        const first = inputPaths[0].replace(/[\\/]$/, '');
+        const base = first.split(/[\\/]/).pop() || 'archive';
+        setArchiveName(base);
+      } else {
+        setArchiveName('archive');
+      }
+    }
+  }, [isOpen, inputPaths]);
 
   if (!isOpen) return null;
 
+  const handleAddFiles = async () => {
+    if (!window.arkive?.openFilesDialog) return;
+    const files = await window.arkive.openFilesDialog();
+    if (files && files.length > 0) {
+      setInputs((prev) => Array.from(new Set([...prev, ...files])));
+    }
+  };
+
+  const handleAddFolder = async () => {
+    if (!window.arkive?.openFolderDialog) return;
+    const folder = await window.arkive.openFolderDialog();
+    if (folder) {
+      setInputs((prev) => Array.from(new Set([...prev, folder])));
+      if (inputs.length === 0) {
+        const base = folder.replace(/[\\/]$/, '').split(/[\\/]/).pop() || 'archive';
+        setArchiveName(base);
+      }
+    }
+  };
+
+  const handleRemoveInput = (idx: number) => {
+    setInputs((prev) => prev.filter((_, i) => i !== idx));
+  };
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    if (inputs.length === 0) {
+      alert('Please add at least one file or folder to compress.');
+      return;
+    }
     onSubmit({
       name: `${archiveName}.${format}`,
       format,
@@ -43,7 +88,7 @@ export const CreateModal: React.FC<CreateModalProps> = ({
       password: password.trim() ? password.trim() : null,
       threads,
       zipMethod,
-      inputs: inputPaths,
+      inputs,
     });
     onClose();
   };
@@ -59,8 +104,8 @@ export const CreateModal: React.FC<CreateModalProps> = ({
 
   return (
     <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-      <div className="bg-slate-850 border border-slate-700/80 rounded-xl w-full max-w-md overflow-hidden shadow-2xl animate-in fade-in zoom-in-95 duration-150">
-        <div className="px-5 py-3.5 border-b border-slate-700/60 flex items-center justify-between">
+      <div className="bg-slate-850 border border-slate-700/80 rounded-xl w-full max-w-lg max-h-[90vh] flex flex-col overflow-hidden shadow-2xl animate-in fade-in zoom-in-95 duration-150">
+        <div className="px-5 py-3.5 border-b border-slate-700/60 flex items-center justify-between shrink-0">
           <div className="flex items-center space-x-2">
             <Archive className="w-4 h-4 text-emerald-400" />
             <h3 className="text-sm font-bold text-white">Create New Archive</h3>
@@ -73,7 +118,78 @@ export const CreateModal: React.FC<CreateModalProps> = ({
           </button>
         </div>
 
-        <form onSubmit={handleSubmit} className="p-5 space-y-4 text-xs">
+        <form onSubmit={handleSubmit} className="p-5 space-y-4 text-xs overflow-y-auto flex-1">
+          {/* Inputs Section (Files and Folders) */}
+          <div>
+            <div className="flex items-center justify-between mb-1.5">
+              <label className="font-semibold text-slate-200">
+                Items to Compress ({inputs.length})
+              </label>
+              <div className="flex items-center space-x-1.5">
+                <button
+                  type="button"
+                  onClick={handleAddFiles}
+                  className="flex items-center space-x-1 px-2.5 py-1 rounded bg-slate-800 hover:bg-slate-700 text-sky-400 border border-slate-700 transition"
+                  title="Add files from disk"
+                >
+                  <FilePlus className="w-3.5 h-3.5" />
+                  <span>+ Files</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={handleAddFolder}
+                  className="flex items-center space-x-1 px-2.5 py-1 rounded bg-slate-800 hover:bg-slate-700 text-emerald-400 border border-slate-700 transition"
+                  title="Add entire folder from disk"
+                >
+                  <FolderPlus className="w-3.5 h-3.5" />
+                  <span>+ Folder</span>
+                </button>
+              </div>
+            </div>
+
+            <div className="border border-slate-700/80 rounded-lg bg-slate-900/80 max-h-32 overflow-y-auto divide-y divide-slate-800/60 p-1">
+              {inputs.length === 0 ? (
+                <div className="py-4 text-center text-slate-500">
+                  <p>No items selected.</p>
+                  <p className="text-[11px] mt-0.5 text-slate-600">
+                    Click <span className="text-emerald-400 font-medium">+ Folder</span> or <span className="text-sky-400 font-medium">+ Files</span> above.
+                  </p>
+                </div>
+              ) : (
+                inputs.map((p, idx) => {
+                  const isDirectory = !p.includes('.') || p.endsWith('/') || p.endsWith('\\');
+                  const baseName = p.replace(/[\\/]$/, '').split(/[\\/]/).pop() || p;
+                  return (
+                    <div
+                      key={idx}
+                      className="flex items-center justify-between px-2.5 py-1.5 hover:bg-slate-800/40 rounded text-slate-300 group"
+                    >
+                      <div className="flex items-center space-x-2 truncate pr-2">
+                        {isDirectory ? (
+                          <Folder className="w-4 h-4 text-emerald-400 shrink-0" />
+                        ) : (
+                          <FileIcon className="w-4 h-4 text-sky-400 shrink-0" />
+                        )}
+                        <span className="font-medium text-slate-200 truncate">{baseName}</span>
+                        <span className="text-[10px] text-slate-500 truncate hidden sm:inline">
+                          ({p})
+                        </span>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => handleRemoveInput(idx)}
+                        className="text-slate-500 hover:text-rose-400 p-0.5 transition shrink-0"
+                        title="Remove from archive"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+                  );
+                })
+              )}
+            </div>
+          </div>
+
           {/* Archive Name */}
           <div>
             <label className="block font-medium text-slate-300 mb-1">
@@ -155,7 +271,7 @@ export const CreateModal: React.FC<CreateModalProps> = ({
                 onChange={(e) => setZipMethod(e.target.value)}
                 className="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-slate-200 focus:outline-none focus:border-emerald-500"
               >
-                <option value="deflate">Deflate (Standard compatibility)</option>
+                <option value="deflate">Deflate (Standard WinRAR / 7-Zip compatibility)</option>
                 <option value="zstd">Zstandard (High speed & modern)</option>
                 <option value="bzip2">Bzip2 (High ratio)</option>
                 <option value="store">Store (No compression)</option>
@@ -217,7 +333,7 @@ export const CreateModal: React.FC<CreateModalProps> = ({
             />
           </div>
 
-          <div className="pt-2 flex justify-end space-x-2 border-t border-slate-700/60">
+          <div className="pt-2 flex justify-end space-x-2 border-t border-slate-700/60 sticky bottom-0 bg-slate-850 pb-1">
             <button
               type="button"
               onClick={onClose}
@@ -227,7 +343,12 @@ export const CreateModal: React.FC<CreateModalProps> = ({
             </button>
             <button
               type="submit"
-              className="px-5 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-semibold transition shadow-lg shadow-emerald-900/40"
+              disabled={inputs.length === 0}
+              className={`px-5 py-2 rounded-lg text-white font-semibold transition shadow-lg ${
+                inputs.length === 0
+                  ? 'bg-emerald-600/50 cursor-not-allowed text-slate-400'
+                  : 'bg-emerald-600 hover:bg-emerald-500 shadow-emerald-900/40'
+              }`}
             >
               Start Compression
             </button>

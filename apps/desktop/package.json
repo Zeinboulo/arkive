@@ -48,7 +48,8 @@
       "createDesktopShortcut": true,
       "createStartMenuShortcut": true,
       "shortcutName": "Arkive",
-      "artifactName": "Arkive-Setup-${version}.${ext}"
+      "artifactName": "Arkive-Setup-${version}.${ext}",
+      "include": "build/installer.nsh"
     },
     "portable": {
       "artifactName": "Arkive-Portable-${version}.${ext}"

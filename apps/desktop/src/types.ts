@@ -18,6 +18,25 @@ export interface Entry {
   crc32: number | null;
 }
 
+export interface FsItem {
+  name: string;
+  path: string;
+  isDir: boolean;
+  size: number;
+  modified: string;
+  isArchive: boolean;
+}
+
+export interface QuickPlace {
+  name: string;
+  path: string;
+}
+
+export interface ExternalAction {
+  action: 'create' | 'extract' | 'open' | 'browse';
+  path: string;
+}
+
 export interface ArchiveInfo {
   path: string;
   format: ArchiveFormat;
@@ -78,10 +97,26 @@ declare global {
   interface Window {
     arkive?: {
       isDesktop: boolean;
+
+      // Dialogs
       openArchiveDialog: () => Promise<string | null>;
       openFilesDialog: () => Promise<string[]>;
+      openFolderDialog: () => Promise<string | null>;
       saveArchiveDialog: (defaultName?: string) => Promise<string | null>;
       selectFolderDialog: () => Promise<string | null>;
+
+      // Filesystem Explorer
+      readDirectory: (dirPath?: string) => Promise<{ currentPath: string; items: FsItem[] }>;
+      getQuickPlaces: () => Promise<QuickPlace[]>;
+
+      // Shell & External Action
+      getStartupAction: () => Promise<ExternalAction | null>;
+      onExternalAction: (callback: (action: ExternalAction) => void) => () => void;
+      registerContextMenu: () => Promise<boolean>;
+      unregisterContextMenu: () => Promise<boolean>;
+      isContextMenuRegistered: () => Promise<boolean>;
+
+      // Archive Operations
       listArchive: (path: string, password?: string | null) => Promise<Entry[]>;
       getArchiveInfo: (path: string, password?: string | null) => Promise<ArchiveInfo>;
       createArchive: (options: any) => Promise<string>;
