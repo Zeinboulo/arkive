@@ -13,6 +13,7 @@ import {
   File as FileIcon,
   X,
   FolderOpen,
+  Video,
 } from 'lucide-react';
 import { Entry, FsItem, QuickPlace } from '../types';
 
@@ -33,6 +34,7 @@ interface FileBrowserProps {
   onNavigateFs: (path: string) => void;
   quickPlaces: QuickPlace[];
   onOpenArchiveFile: (path: string) => void;
+  onCompressVideoFile?: (path: string) => void;
 
   // Common selection
   selectedItems: Set<string>;
@@ -56,6 +58,7 @@ export const FileBrowser: React.FC<FileBrowserProps> = ({
   onNavigateFs,
   quickPlaces,
   onOpenArchiveFile,
+  onCompressVideoFile,
   selectedItems,
   onToggleSelect,
   onDropFiles,
@@ -140,6 +143,9 @@ export const FileBrowser: React.FC<FileBrowserProps> = ({
     if (isDir) return <Folder className="w-4 h-4 text-sky-400 fill-sky-400/20" />;
     if (isArchive) return <FileArchive className="w-4 h-4 text-purple-400 fill-purple-400/20" />;
     const ext = name.split('.').pop()?.toLowerCase();
+    if (['mp4', 'mkv', 'mov', 'avi', 'webm', 'flv', 'wmv', 'm4v', 'ts'].includes(ext || '')) {
+      return <Video className="w-4 h-4 text-violet-400" />;
+    }
     if (['png', 'jpg', 'jpeg', 'gif', 'webp', 'svg', 'ico'].includes(ext || '')) {
       return <Image className="w-4 h-4 text-emerald-400" />;
     }
@@ -436,6 +442,8 @@ export const FileBrowser: React.FC<FileBrowserProps> = ({
           ) : (
             explorerItems.map((item) => {
               const isSelected = selectedItems.has(item.path);
+              const ext = item.name.split('.').pop()?.toLowerCase();
+              const isVideo = !item.isDir && ['mp4', 'mkv', 'mov', 'avi', 'webm', 'flv', 'wmv', 'm4v', 'ts'].includes(ext || '');
 
               return (
                 <div
@@ -446,6 +454,8 @@ export const FileBrowser: React.FC<FileBrowserProps> = ({
                       onNavigateFs(item.path);
                     } else if (item.isArchive) {
                       onOpenArchiveFile(item.path);
+                    } else if (isVideo && onCompressVideoFile) {
+                      onCompressVideoFile(item.path);
                     }
                   }}
                   className={`grid grid-cols-12 px-4 py-1.5 text-xs items-center cursor-pointer transition select-none ${
@@ -460,6 +470,8 @@ export const FileBrowser: React.FC<FileBrowserProps> = ({
                       className={`truncate font-medium ${
                         item.isArchive
                           ? 'text-purple-300 font-semibold'
+                          : isVideo
+                          ? 'text-violet-300'
                           : item.isDir
                           ? 'text-sky-300'
                           : 'text-slate-200'
@@ -478,6 +490,8 @@ export const FileBrowser: React.FC<FileBrowserProps> = ({
                       ? 'File folder'
                       : item.isArchive
                       ? 'Compressed Archive'
+                      : isVideo
+                      ? 'Video Media'
                       : item.name.split('.').pop()?.toUpperCase() + ' File'}
                   </div>
 
@@ -490,6 +504,19 @@ export const FileBrowser: React.FC<FileBrowserProps> = ({
                       <span className="px-1.5 py-0.2 rounded bg-purple-500/20 text-purple-300 font-mono">
                         ARCHIVE
                       </span>
+                    ) : isVideo ? (
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          onCompressVideoFile?.(item.path);
+                        }}
+                        className="px-1.5 py-0.2 rounded bg-violet-500/20 hover:bg-violet-500/40 text-violet-300 font-mono text-[9px] border border-violet-500/30 transition flex items-center space-x-1"
+                        title="Compress this video"
+                      >
+                        <Video className="w-2.5 h-2.5 inline" />
+                        <span>VIDEO</span>
+                      </button>
                     ) : (
                       <span className="text-slate-600">-</span>
                     )}

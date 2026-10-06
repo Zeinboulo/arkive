@@ -118,6 +118,52 @@ export interface ProgressUpdate {
   speedMbS: number;
 }
 
+export interface VideoMetadata {
+  path: string;
+  filename: string;
+  size_bytes: number;
+  duration_seconds: number;
+  width: number;
+  height: number;
+  video_codec: string;
+  audio_codec: string;
+  bitrate_kbps: number;
+  fps: number;
+}
+
+export type VideoCodecType = 'h264' | 'hevc' | 'vp9' | 'av1';
+export type VideoPresetType = 'discord' | 'balanced' | 'high' | '720p' | 'custom';
+export type VideoResolutionType = 'original' | '1080p' | '720p' | '480p';
+
+export interface VideoCompressOptions {
+  input: string;
+  output: string;
+  preset?: VideoPresetType;
+  codec?: VideoCodecType;
+  targetMb?: number;
+  crf?: number;
+  resolution?: VideoResolutionType;
+  audioBitrate?: number;
+}
+
+export interface VideoProgressUpdate {
+  percent: number;
+  currentTime: number;
+  totalDuration: number;
+  fps: number;
+  speed: string;
+  currentSizeKb: number;
+}
+
+export interface VideoCompressStats {
+  input_bytes: number;
+  output_bytes: number;
+  duration_seconds: number;
+  savings_pct: number;
+  elapsed_ms: number;
+  output_path: string;
+}
+
 declare global {
   interface Window {
     arkive?: {
@@ -129,6 +175,8 @@ declare global {
       openFolderDialog: () => Promise<string | null>;
       saveArchiveDialog: (defaultName?: string) => Promise<string | null>;
       selectFolderDialog: () => Promise<string | null>;
+      openVideoDialog: () => Promise<string | null>;
+      saveVideoDialog: (defaultName?: string) => Promise<string | null>;
 
       // Filesystem Explorer
       readDirectory: (dirPath?: string) => Promise<{ currentPath: string; items: FsItem[] }>;
@@ -155,6 +203,12 @@ declare global {
         maxBytes?: number
       ) => Promise<string>;
       runBenchmark: (config: BenchConfig) => Promise<BenchReport>;
+
+      // Video Operations
+      probeVideo: (path: string) => Promise<VideoMetadata>;
+      compressVideo: (options: VideoCompressOptions) => Promise<VideoCompressStats>;
+      cancelVideoCompression: () => Promise<boolean>;
+      onVideoProgress: (callback: (progress: VideoProgressUpdate) => void) => () => void;
     };
   }
 }

@@ -2,8 +2,9 @@ use anyhow::{Context, Result};
 use arkive_core::bench::{self, BenchConfig, Dataset};
 use arkive_core::codec::Codec;
 use arkive_core::{
-    create, extract, info, list, read_entry, repair, test, CreateOptions, ExtractOptions, Format,
-    Progress, ZipMethod,
+    compress_video, create, extract, info, list, probe_video, read_entry, repair,
+    suggest_video_output, test, CreateOptions, ExtractOptions, Format, Progress, VideoCodec,
+    VideoCompressOptions, VideoPreset, VideoResolution, ZipMethod,
 };
 use clap::{Args, Parser, Subcommand};
 use colored::Colorize;
@@ -54,6 +55,9 @@ enum Commands {
 
     #[command(name = "bench", about = "Run compression algorithm benchmarks")]
     Bench(BenchArgs),
+
+    #[command(name = "video", alias = "v", about = "Compress, transcode, or optimize video files")]
+    Video(VideoArgs),
 }
 
 #[derive(Args, Debug)]
@@ -211,6 +215,44 @@ struct BenchArgs {
     json: bool,
 }
 
+#[derive(Args, Debug)]
+struct VideoArgs {
+    /// Video file to compress or inspect
+    input: PathBuf,
+
+    /// Destination output video path (defaults to <name>.compressed.mp4)
+    #[arg(short, long)]
+    output: Option<PathBuf>,
+
+    /// Compression preset: discord, balanced, high, 720p, custom
+    #[arg(short, long, default_value = "balanced")]
+    preset: String,
+
+    /// Target video codec: h264, hevc/h265, vp9, av1
+    #[arg(short, long)]
+    codec: Option<String>,
+
+    /// Target file size limit in megabytes (e.g. 24 for Discord limit)
+    #[arg(short = 'm', long)]
+    target_mb: Option<f64>,
+
+    /// Constant Rate Factor (CRF) quality: 18 (visually lossless) to 35 (high compression)
+    #[arg(long)]
+    crf: Option<u32>,
+
+    /// Output resolution: original, 1080p, 720p, 480p
+    #[arg(short, long)]
+    resolution: Option<String>,
+
+    /// Inspect and probe video stream metadata without encoding
+    #[arg(long)]
+    probe: bool,
+
+    /// Output results as JSON
+    #[arg(long)]
+    json: bool,
+}
+
 struct CliProgress {
     pb: ProgressBar,
     cancelled: Arc<AtomicBool>,
@@ -287,6 +329,7 @@ fn main() -> Result<()> {
         Commands::Cat(args) => handle_cat(args),
         Commands::Repair(args) => handle_repair(args),
         Commands::Bench(args) => handle_bench(args),
+        Commands::Video(args) => handle_video(args),
     }
 }
 
@@ -641,6 +684,100 @@ fn handle_bench(args: BenchArgs) -> Result<()> {
             csv_path.display()
         );
     }
+
+    Ok(())
+}
+
+fn handle_video(args: VideoArgs) -> Result<()> {
+    let meta = probe_video(&args.input)
+        .with_context(|| format!("Failed to probe video: {}", args.input.display()))?;
+
+    if args.probe {
+        if args.json {
+            println!("{}", serde_json::to_string_pretty(&meta)?);
+            return Ok(());
+        }
+
+        println!("{}", "Video Information:".bold());
+        println!("  File:       {}", meta.filename);
+        println!("  Path:       {}", meta.path);
+        println!("  Size:       {}", format_bytes(meta.size_bytes));
+        println!("  Duration:   {:.1}s", meta.duration_seconds);
+        println!("  Resolution: {}x{}", meta.width, meta.height);
+        println!("  FPS:        {:.1}", meta.fps);
+        println!("  Video:      {}", meta.video_codec.green().bold());
+        println!("  Audio:      {}", meta.audio_codec);
+        println!("  Bitrate:    {} kb/s", meta.bitrate_kbps);
+        return Ok(());
+    }
+
+    let preset = VideoPreset::parse(&args.preset)
+        .unwrap_or(VideoPreset::Balanced);
+
+    let codec = args
+        .codec
+        .as_deref()
+        .and_then(VideoCodec::parse)
+        .unwrap_or_default();
+
+    let resolution = args
+        .resolution
+        .as_deref()
+        .and_then(VideoResolution::parse)
+        .unwrap_or_default();
+
+    let output = args
+        .output
+        .unwrap_or_else(|| suggest_video_output(&args.input));
+
+    let opts = VideoCompressOptions {
+        input: args.input.clone(),
+        output: output.clone(),
+        codec,
+        preset,
+        crf: args.crf,
+        target_mb: args.target_mb,
+        resolution,
+        audio_bitrate_kbps: 128,
+    };
+
+    println!(
+        "{} Compressing video: {} -> {}",
+        "==>".bold().green(),
+        args.input.display(),
+        output.display()
+    );
+    println!(
+        "   Preset: {:?} | Codec: {} | Source: {}x{} ({:.1}s, {})",
+        preset,
+        codec.label().yellow(),
+        meta.width,
+        meta.height,
+        meta.duration_seconds,
+        format_bytes(meta.size_bytes)
+    );
+
+    let progress = CliProgress::new("Encoding video...");
+    let stats = compress_video(&opts, &progress)?;
+    progress.pb.finish_and_clear();
+
+    if args.json {
+        println!("{}", serde_json::to_string_pretty(&stats)?);
+        return Ok(());
+    }
+
+    println!(
+        "{} Video compressed successfully in {:.2}s",
+        "✓".bold().green(),
+        stats.elapsed_ms as f64 / 1000.0
+    );
+    println!(
+        "   Size: {} -> {} ({:.1}% savings)",
+        format_bytes(stats.input_bytes),
+        format_bytes(stats.output_bytes).green().bold(),
+        stats.savings_pct
+    );
+    println!("   Output: {}", stats.output_path.cyan());
 
     Ok(())
 }

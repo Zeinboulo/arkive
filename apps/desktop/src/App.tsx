@@ -7,6 +7,7 @@ import { ExtractModal, ExtractModalSubmitData } from './components/ExtractModal'
 import { RepairModal } from './components/RepairModal';
 import { PreviewModal } from './components/PreviewModal';
 import { InfoModal } from './components/InfoModal';
+import { VideoModal } from './components/VideoModal';
 import { StatusBar } from './components/StatusBar';
 import {
   Entry,
@@ -48,6 +49,8 @@ export const App: React.FC = () => {
   const [isExtractOpen, setIsExtractOpen] = useState(false);
   const [isRepairOpen, setIsRepairOpen] = useState(false);
   const [isInfoOpen, setIsInfoOpen] = useState(false);
+  const [isVideoModalOpen, setIsVideoModalOpen] = useState(false);
+  const [videoModalPath, setVideoModalPath] = useState<string | null>(null);
   const [createInputs, setCreateInputs] = useState<string[]>([]);
 
   // Preview
@@ -101,14 +104,32 @@ export const App: React.FC = () => {
     }
   };
 
+  const handleOpenVideoCompress = (targetPath?: string) => {
+    let p = targetPath;
+    if (!p && selectedEntries.size > 0) {
+      const first = Array.from(selectedEntries)[0];
+      const ext = first.split('.').pop()?.toLowerCase();
+      if (['mp4', 'mkv', 'mov', 'avi', 'webm', 'flv', 'wmv', 'm4v', 'ts'].includes(ext || '')) {
+        p = first;
+      }
+    }
+    setVideoModalPath(p || null);
+    setIsVideoModalOpen(true);
+  };
+
   const handleExternalAction = async (act: ExternalAction) => {
     if (act.action === 'open') {
       await openArchive(act.path);
     } else if (act.action === 'browse') {
       await loadDirectory(act.path);
     } else if (act.action === 'create') {
-      setCreateInputs([act.path]);
-      setIsCreateOpen(true);
+      const ext = act.path.split('.').pop()?.toLowerCase();
+      if (['mp4', 'mkv', 'mov', 'avi', 'webm', 'flv', 'wmv', 'm4v', 'ts'].includes(ext || '')) {
+        handleOpenVideoCompress(act.path);
+      } else {
+        setCreateInputs([act.path]);
+        setIsCreateOpen(true);
+      }
     } else if (act.action === 'extract') {
       await openArchive(act.path);
       setIsExtractOpen(true);
@@ -385,6 +406,7 @@ export const App: React.FC = () => {
         onInfo={() => setIsInfoOpen(true)}
         onRepair={() => setIsRepairOpen(true)}
         onBenchmark={() => setSelectedTab('bench')}
+        onVideoCompress={() => handleOpenVideoCompress()}
         hasArchive={Boolean(currentArchive)}
         selectedTab={selectedTab}
         setSelectedTab={setSelectedTab}
@@ -416,6 +438,7 @@ export const App: React.FC = () => {
           onNavigateFs={loadDirectory}
           quickPlaces={quickPlaces}
           onOpenArchiveFile={openArchive}
+          onCompressVideoFile={(path) => handleOpenVideoCompress(path)}
           selectedItems={selectedEntries}
           onToggleSelect={handleToggleSelect}
           onSelectAll={() => {
@@ -479,6 +502,12 @@ export const App: React.FC = () => {
         isOpen={isInfoOpen}
         onClose={() => setIsInfoOpen(false)}
         info={archiveInfo}
+      />
+
+      <VideoModal
+        isOpen={isVideoModalOpen}
+        onClose={() => setIsVideoModalOpen(false)}
+        initialVideoPath={videoModalPath}
       />
     </div>
   );

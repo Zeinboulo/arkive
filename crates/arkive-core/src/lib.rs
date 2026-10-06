@@ -30,6 +30,7 @@ pub mod inputs;
 pub mod progress;
 pub mod repair;
 pub mod util;
+pub mod video;
 
 pub use archive::{
     create, detect, extract, info, list, read_entry, suggest_extract_dir, suggest_output, test,
@@ -39,3 +40,8 @@ pub use error::{Error, Result};
 pub use format::{Format, ZipMethod};
 pub use progress::{CancelToken, NoProgress, Progress};
 pub use repair::RepairReport;
+pub use video::{
+    compress as compress_video, probe as probe_video, suggest_output as suggest_video_output,
+    VideoCodec, VideoCompressOptions, VideoCompressStats, VideoMetadata, VideoPreset,
+    VideoResolution,
+};

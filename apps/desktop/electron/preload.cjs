@@ -36,4 +36,17 @@ contextBridge.exposeInMainWorld('arkive', {
   repairArchive: (archive, output) => ipcRenderer.invoke('arkive:repair', { archive, output }),
   readEntry: (path, entry, password, maxBytes) => ipcRenderer.invoke('arkive:cat', { path, entry, password, maxBytes }),
   runBenchmark: (config) => ipcRenderer.invoke('arkive:bench', config),
+
+  // Video Compression & Inspection
+  openVideoDialog: () => ipcRenderer.invoke('dialog:openVideo'),
+  saveVideoDialog: (defaultName) => ipcRenderer.invoke('dialog:saveVideo', defaultName),
+  probeVideo: (path) => ipcRenderer.invoke('video:probe', path),
+  compressVideo: (options) => ipcRenderer.invoke('video:compress', options),
+  cancelVideoCompression: () => ipcRenderer.invoke('video:cancel'),
+  onVideoProgress: (callback) => {
+    const handler = (_event, data) => callback(data);
+    ipcRenderer.on('video:progress', handler);
+    return () => ipcRenderer.removeListener('video:progress', handler);
+  },
 });
+

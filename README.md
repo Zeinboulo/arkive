@@ -31,11 +31,12 @@ flowchart TD
     end
 
     subgraph Engine ["Rust Systems Core Engine (arkive-cli & arkive-core)"]
-        CLI["CLI Subcommands (a, x, l, t, cat, bench, repair)"]
+        CLI["CLI Subcommands (a, x, l, t, cat, bench, repair, video)"]
         Core_Con["Parallel Concurrency Engine (Rayon ThreadPool)"]
         Core_Repair["ZIP Central Directory Reconstructor"]
         Core_Pareto["2D Pareto-Optimal Frontier Analyzer"]
         Core_Crypto["AES-256 WinZip AE-2 & 7-Zip Encryption"]
+        Core_Video["Video Engine & Bitrate Budgeting (FFmpeg 6.1)"]
     end
 
     subgraph Codecs ["Format Backends & Codecs"]
@@ -43,6 +44,7 @@ flowchart TD
         FMT_7z["7-Zip (LZMA2 / AES-256)"]
         FMT_Tar["TAR Suite (Gz / Bz2 / Xz / Zst)"]
         FMT_Rar["RAR Parser (Unrar Extraction)"]
+        FMT_Vid["Video Codecs (H.264 / HEVC / VP9 / AV1)"]
     end
 
     UI --> Host_IPC
@@ -55,7 +57,9 @@ flowchart TD
     CLI --> Core_Repair
     CLI --> Core_Pareto
     CLI --> Core_Crypto
+    CLI --> Core_Video
     Core_Con --> Codecs
+    Core_Video --> FMT_Vid
 ```
 
 > 📖 **Deep Dive:** Read the complete [ARCHITECTURE.md](ARCHITECTURE.md) for sequence diagrams, threadpool mechanics, and algorithmic details.
@@ -76,6 +80,7 @@ flowchart TD
 | **Data Engineering Benchmark Suite** | ✅ Built-in | ❌ No | ⚠️ CPU only | ❌ No |
 | **Pareto-Optimal Frontier Analysis** | ✅ Built-in | ❌ No | ❌ No | ❌ No |
 | **Damaged ZIP Central Directory Repair** | ✅ Local Header Scan | ⚠️ Basic | ❌ No | ⚠️ Basic |
+| **Video Compression & Transcoding** (Discord <25MB, HEVC, AV1) | ✅ Built-in FFmpeg | ❌ No | ❌ No | ❌ No |
 | **Folder Compression & Drag-and-Drop** | ✅ Yes | ✅ Yes | ✅ Yes | ✅ Yes |
 | **AES-256 WinZip AE-2 / 7z Encryption** | ✅ Yes | ✅ Yes | ✅ Yes | ✅ Yes |
 | **Unified CLI (`arkive`)** | ✅ Built-in | ⚠️ Command prompt | ✅ `7z` | ⚠️ Scriptable |
@@ -197,6 +202,24 @@ arkive bench --dataset csv --size 32
 
 # Export benchmark matrix to CSV
 arkive bench --dataset json --size 16 --csv bench_report.csv
+```
+
+### 7. Compress & Optimize Videos
+```bash
+# Balanced compression (H.264, universal playback)
+arkive video input.mp4 -o output.mp4 --preset balanced
+
+# Target Discord 25MB file upload limit
+arkive video recording.mov --preset discord
+
+# Maximum compression ratio with H.265 / HEVC
+arkive video raw_footage.mkv --preset high
+
+# Downscale to 720p for mobile sharing
+arkive video presentation.mp4 --preset 720p
+
+# Probe video stream metadata without encoding
+arkive video sample.mp4 --probe --json
 ```
 
 ---

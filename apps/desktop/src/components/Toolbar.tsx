@@ -10,6 +10,7 @@ import {
   HardDrive,
   CheckCircle2,
   FolderPlus,
+  Video,
 } from 'lucide-react';
 
 interface ToolbarProps {
@@ -21,6 +22,7 @@ interface ToolbarProps {
   onInfo: () => void;
   onRepair: () => void;
   onBenchmark: () => void;
+  onVideoCompress: () => void;
   hasArchive: boolean;
   selectedTab: 'files' | 'bench';
   setSelectedTab: (tab: 'files' | 'bench') => void;
@@ -40,6 +42,7 @@ export const Toolbar: React.FC<ToolbarProps> = ({
   onInfo,
   onRepair,
   onBenchmark,
+  onVideoCompress,
   hasArchive,
   selectedTab,
   setSelectedTab,
@@ -137,6 +140,16 @@ export const Toolbar: React.FC<ToolbarProps> = ({
         >
           <Wrench className="w-4 h-4 text-rose-400" />
           <span>Repair</span>
+        </button>
+
+        {/* Compress Video */}
+        <button
+          onClick={onVideoCompress}
+          className="flex items-center space-x-1.5 px-3 py-1.5 rounded-md hover:bg-slate-700/70 text-slate-200 transition font-medium text-xs active:scale-95 bg-violet-500/10 border border-violet-500/20"
+          title="Compress & transcode video (H.264, HEVC, Discord 25MB budget)"
+        >
+          <Video className="w-4 h-4 text-violet-400" />
+          <span>Compress Video</span>
         </button>
 
         <div className="h-4 w-px bg-slate-700 mx-1 hidden sm:block" />

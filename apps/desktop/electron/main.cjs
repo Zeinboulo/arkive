@@ -358,6 +358,34 @@ ipcMain.handle('dialog:saveArchive', async (_, defaultName) => {
   return res.filePath;
 });
 
+ipcMain.handle('dialog:openVideo', async () => {
+  const res = await dialog.showOpenDialog({
+    title: 'Select Video to Compress',
+    filters: [
+      { name: 'Video Files', extensions: ['mp4', 'mkv', 'mov', 'avi', 'webm', 'flv', 'wmv', 'm4v', 'ts'] },
+      { name: 'All Files', extensions: ['*'] },
+    ],
+    properties: ['openFile'],
+  });
+  if (res.canceled || res.filePaths.length === 0) return null;
+  return res.filePaths[0];
+});
+
+ipcMain.handle('dialog:saveVideo', async (_, defaultName) => {
+  const res = await dialog.showSaveDialog({
+    title: 'Save Compressed Video As',
+    defaultPath: defaultName || 'video.compressed.mp4',
+    filters: [
+      { name: 'MP4 Video', extensions: ['mp4'] },
+      { name: 'MKV Video', extensions: ['mkv'] },
+      { name: 'WebM Video', extensions: ['webm'] },
+      { name: 'All Files', extensions: ['*'] },
+    ],
+  });
+  if (res.canceled) return null;
+  return res.filePath;
+});
+
 // Startup & Shell IPC
 ipcMain.handle('app:getStartupAction', () => {
   const act = pendingStartupAction;
@@ -439,3 +467,291 @@ ipcMain.handle('arkive:bench', async (_, config) => {
   const { stdout } = await runArkive(args);
   return parseJson(stdout);
 });
+
+// Video Processing Engine & FFmpeg Integration
+function findFfmpegBinary() {
+  if (process.env.FFMPEG_PATH && fs.existsSync(process.env.FFMPEG_PATH)) {
+    return process.env.FFMPEG_PATH;
+  }
+  const candidates = app.isPackaged
+    ? [
+        path.join(process.resourcesPath, 'bin', 'ffmpeg.exe'),
+        path.join(process.resourcesPath, 'ffmpeg.exe'),
+      ]
+    : [
+        path.join(__dirname, '..', 'bin', 'ffmpeg.exe'),
+        path.join(__dirname, '..', '..', '..', 'target', 'release', 'ffmpeg.exe'),
+        path.join(__dirname, '..', '..', '..', 'target', 'debug', 'ffmpeg.exe'),
+      ];
+  for (const c of candidates) {
+    if (fs.existsSync(c)) {
+      return c;
+    }
+  }
+  return 'ffmpeg.exe';
+}
+
+function probeVideoDirect(videoPath) {
+  return new Promise((resolve, reject) => {
+    const ffmpegBin = findFfmpegBinary();
+    const proc = spawn(ffmpegBin, ['-i', videoPath], { windowsHide: true });
+    let stderr = '';
+    proc.stderr.on('data', (d) => { stderr += d.toString(); });
+    proc.on('close', () => {
+      try {
+        let stats = fs.statSync(videoPath);
+        let size_bytes = stats.size;
+        let filename = path.basename(videoPath);
+        let duration_seconds = 0;
+        let bitrate_kbps = 0;
+        let width = 0;
+        let height = 0;
+        let video_codec = 'unknown';
+        let audio_codec = 'unknown';
+        let fps = 0;
+
+        const lines = stderr.split(/\r?\n/);
+        for (const line of lines) {
+          const trimmed = line.trim();
+          if (trimmed.startsWith('Duration:')) {
+            const match = trimmed.match(/Duration:\s*(\d+):(\d+):([\d.]+)/);
+            if (match) {
+              duration_seconds = parseFloat(match[1]) * 3600 + parseFloat(match[2]) * 60 + parseFloat(match[3]);
+            }
+            const brMatch = trimmed.match(/bitrate:\s*(\d+)\s*kb\/s/);
+            if (brMatch) {
+              bitrate_kbps = parseInt(brMatch[1], 10);
+            }
+          }
+          if (trimmed.includes('Video:')) {
+            const idx = trimmed.indexOf('Video:');
+            const rest = trimmed.slice(idx + 6);
+            const tokens = rest.split(',').map((s) => s.trim());
+            if (tokens[0]) {
+              video_codec = tokens[0].split(/\s+/)[0] || 'unknown';
+            }
+            for (const t of tokens) {
+              const resMatch = t.match(/^(\d{3,5})x(\d{3,5})/);
+              if (resMatch) {
+                width = parseInt(resMatch[1], 10);
+                height = parseInt(resMatch[2], 10);
+              }
+              const fpsMatch = t.match(/([\d.]+)\s*fps/);
+              if (fpsMatch) {
+                fps = parseFloat(fpsMatch[1]);
+              }
+            }
+          }
+          if (trimmed.includes('Audio:')) {
+            const idx = trimmed.indexOf('Audio:');
+            const rest = trimmed.slice(idx + 6);
+            const tokens = rest.split(',').map((s) => s.trim());
+            if (tokens[0]) {
+              audio_codec = tokens[0].split(/\s+/)[0] || 'unknown';
+            }
+          }
+        }
+
+        resolve({
+          path: videoPath.replace(/\\/g, '/'),
+          filename,
+          size_bytes,
+          duration_seconds,
+          width,
+          height,
+          video_codec,
+          audio_codec,
+          bitrate_kbps,
+          fps,
+        });
+      } catch (err) {
+        reject(err);
+      }
+    });
+    proc.on('error', (err) => reject(err));
+  });
+}
+
+ipcMain.handle('video:probe', async (_, videoPath) => {
+  try {
+    const { stdout } = await runArkive(['video', videoPath, '--probe', '--json']);
+    return parseJson(stdout);
+  } catch (_) {
+    return probeVideoDirect(videoPath);
+  }
+});
+
+let currentVideoProc = null;
+let currentVideoCancelled = false;
+
+ipcMain.handle('video:cancel', () => {
+  if (currentVideoProc) {
+    currentVideoCancelled = true;
+    try {
+      currentVideoProc.kill('SIGTERM');
+    } catch (_) {}
+    currentVideoProc = null;
+    return true;
+  }
+  return false;
+});
+
+ipcMain.handle('video:compress', async (_, options) => {
+  const {
+    input,
+    output,
+    preset = 'balanced',
+    codec = 'h264',
+    targetMb,
+    crf,
+    resolution,
+    audioBitrate = 128,
+  } = options;
+
+  currentVideoCancelled = false;
+  const ffmpegBin = findFfmpegBinary();
+  const startTime = Date.now();
+
+  let meta;
+  try {
+    meta = await probeVideoDirect(input);
+  } catch (err) {
+    meta = { duration_seconds: 1, size_bytes: 0, height: 1080 };
+  }
+
+  const durationSecs = Math.max(1, meta.duration_seconds || 1);
+  const inputBytes = meta.size_bytes || 0;
+
+  let vcodec = 'libx264';
+  if (codec === 'hevc' || codec === 'h265') vcodec = 'libx265';
+  else if (codec === 'vp9') vcodec = 'libvpx-vp9';
+  else if (codec === 'av1') vcodec = 'libaom-av1';
+
+  let effectiveTargetMb = targetMb;
+  let effectiveCrf = crf;
+  let effectiveResolution = resolution;
+
+  if (preset === 'discord') {
+    effectiveTargetMb = 24.0;
+    vcodec = 'libx264';
+    if (meta.height > 1080) effectiveResolution = '1080p';
+  } else if (preset === 'balanced') {
+    vcodec = 'libx264';
+    if (effectiveCrf === undefined && !effectiveTargetMb) effectiveCrf = 28;
+  } else if (preset === 'high') {
+    vcodec = 'libx265';
+    if (effectiveCrf === undefined && !effectiveTargetMb) effectiveCrf = 28;
+  } else if (preset === '720p') {
+    vcodec = 'libx264';
+    if (effectiveCrf === undefined && !effectiveTargetMb) effectiveCrf = 28;
+    effectiveResolution = '720p';
+  }
+
+  const args = ['-y', '-i', input, '-c:v', vcodec];
+
+  if (vcodec === 'libx264') {
+    args.push('-pix_fmt', 'yuv420p');
+  } else if (vcodec === 'libx265') {
+    args.push('-tag:v', 'hvc1');
+  }
+
+  if (effectiveTargetMb) {
+    const totalKbits = effectiveTargetMb * 8192;
+    const totalKbps = Math.floor(totalKbits / durationSecs);
+    const aKbps = Math.min(audioBitrate, Math.floor(totalKbps / 4));
+    const vKbps = Math.max(100, totalKbps - aKbps);
+    args.push('-b:v', `${vKbps}k`);
+    args.push('-maxrate', `${Math.floor(vKbps * 1.5)}k`);
+    args.push('-bufsize', `${vKbps * 2}k`);
+  } else {
+    args.push('-crf', (effectiveCrf || 28).toString());
+  }
+
+  if (effectiveResolution === '1080p' && meta.height > 1080) {
+    args.push('-vf', 'scale=-2:1080');
+  } else if (effectiveResolution === '720p' && meta.height > 720) {
+    args.push('-vf', 'scale=-2:720');
+  } else if (effectiveResolution === '480p' && meta.height > 480) {
+    args.push('-vf', 'scale=-2:480');
+  }
+
+  args.push('-c:a', 'aac', '-b:a', `${audioBitrate}k`);
+  args.push('-preset', 'fast');
+  args.push(output);
+
+  return new Promise((resolve, reject) => {
+    const proc = spawn(ffmpegBin, args, { windowsHide: true });
+    currentVideoProc = proc;
+    let stderr = '';
+
+    proc.stderr.on('data', (data) => {
+      const text = data.toString();
+      stderr += text;
+
+      const timeMatch = text.match(/time=(\d+):(\d+):([\d.]+)/);
+      if (timeMatch && mainWindow && !mainWindow.isDestroyed()) {
+        const curSecs = parseFloat(timeMatch[1]) * 3600 + parseFloat(timeMatch[2]) * 60 + parseFloat(timeMatch[3]);
+        const percent = Math.min(100, Math.round((curSecs / durationSecs) * 100));
+
+        let fps = 0;
+        const fpsMatch = text.match(/fps=\s*([\d.]+)/);
+        if (fpsMatch) fps = parseFloat(fpsMatch[1]);
+
+        let speed = '1.0x';
+        const speedMatch = text.match(/speed=\s*([\d.]+x)/);
+        if (speedMatch) speed = speedMatch[1];
+
+        let sizeKb = 0;
+        const sizeMatch = text.match(/size=\s*(\d+)kB/);
+        if (sizeMatch) sizeKb = parseInt(sizeMatch[1], 10);
+
+        mainWindow.webContents.send('video:progress', {
+          percent,
+          currentTime: curSecs,
+          totalDuration: durationSecs,
+          fps,
+          speed,
+          currentSizeKb: sizeKb,
+        });
+      }
+    });
+
+    proc.on('close', (code) => {
+      currentVideoProc = null;
+      if (currentVideoCancelled) {
+        try {
+          if (fs.existsSync(output)) fs.unlinkSync(output);
+        } catch (_) {}
+        return reject(new Error('Compression cancelled'));
+      }
+
+      if (code === 0) {
+        let outputBytes = 0;
+        try {
+          outputBytes = fs.statSync(output).size;
+        } catch (_) {}
+
+        const savingsPct = inputBytes > 0 && outputBytes < inputBytes
+          ? Number((((inputBytes - outputBytes) / inputBytes) * 100).toFixed(1))
+          : 0;
+
+        resolve({
+          input_bytes: inputBytes,
+          output_bytes: outputBytes,
+          duration_seconds: durationSecs,
+          savings_pct: savingsPct,
+          elapsed_ms: Date.now() - startTime,
+          output_path: output.replace(/\\/g, '/'),
+        });
+      } else {
+        reject(new Error(stderr || `FFmpeg exited with code ${code}`));
+      }
+    });
+
+    proc.on('error', (err) => {
+      currentVideoProc = null;
+      reject(err);
+    });
+  });
+});
+

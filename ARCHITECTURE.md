@@ -166,7 +166,50 @@ flowchart LR
 
 ---
 
-## 6. Directory Layout & Module Responsibilities
+## 6. Video Compression & Transcoding Architecture
+
+Standard DEFLATE/ZIP algorithms cannot effectively compress video files (MP4, MKV, MOV, WebM) because modern video containers already contain high-entropy, DCT/wavelet-compressed bitstreams. True video compression requires perceptual re-encoding and bitrate budgeting.
+
+Arkive bundles an embedded **FFmpeg 6.1** transcoding engine integrated across the Rust core, CLI, and Electron desktop app:
+
+```mermaid
+flowchart TD
+    VideoInput["Source Video (MP4 / MKV / MOV / WebM)"] --> Probe["Video Metadata Prober (probe_video)"]
+    Probe --> Meta["Extract: Duration, Resolution, FPS, Bitrate, Codecs"]
+    
+    Meta --> Strategy{"Compression Preset Strategy"}
+    
+    Strategy -- "Discord (< 25 MB)" --> Budget["Bitrate Budgeting Formula: Target 24 MB"]
+    Strategy -- "Balanced" --> H264["H.264 (libx264) + CRF 28 + Fast Preset"]
+    Strategy -- "Max Space" --> HEVC["H.265 / HEVC (libx265) + CRF 28 + Apple 'hvc1' Tag"]
+    Strategy -- "Mobile 720p" --> Downscale["scale=-2:720 Filter + CRF 28"]
+    Strategy -- "Custom" --> CustomParams["User Defined: Codec, CRF / Target MB, Resolution"]
+    
+    Budget --> Transcode["FFmpeg Execution Subprocess"]
+    H264 --> Transcode
+    HEVC --> Transcode
+    Downscale --> Transcode
+    CustomParams --> Transcode
+    
+    Transcode --> ProgressStream["Real-Time Stderr Progress Parser (time, fps, speed)"]
+    ProgressStream --> UIProgress["Desktop UI Live Progress & Percentage"]
+    
+    Transcode --> OutputFile["Optimized Video (.compressed.mp4)"]
+    OutputFile --> StatsCalc["Before/After Comparison & Savings %"]
+```
+
+### Bitrate Budgeting Formula
+When compressing to strict platform upload caps (such as Discord's 25 MB limit or email attachments), Arkive dynamically solves for the maximum allowable video bitrate given the video's total duration:
+
+$$\text{Bitrate}_{\text{video}} = \left( \frac{\text{TargetMB} \times 8192}{\text{Duration}_{\text{seconds}}} \right) - \text{Bitrate}_{\text{audio}}$$
+
+- Guarantees video output stays strictly within the target threshold without guessing.
+- Constrains buffer size (`-bufsize`) and maximum bitrate (`-maxrate`) to prevent bandwidth spikes.
+- Downscales resolutions higher than 1080p to prevent compression artifacts at constrained bitrates.
+
+---
+
+## 7. Repository Directory Map
 
 ```
 arkive/
@@ -181,6 +224,7 @@ arkive/
 │   │   │   ├── progress.rs         # Streaming progress tracker & cancellation
 │   │   │   ├── repair.rs           # Truncated ZIP central directory reconstructor
 │   │   │   ├── util.rs             # Path normalization & Zip-Slip protection
+│   │   │   ├── video.rs            # Video probing, transcoding & bitrate budgeting
 │   │   │   └── formats/            # Specialized format drivers (ZIP, 7z, TAR, RAR)
 │   └── arkive-cli/                 # Command-line interface binary
 │       └── src/main.rs             # Clap CLI, formatted terminal tables, JSON output
@@ -196,6 +240,7 @@ arkive/
 │           ├── components/
 │           │   ├── FileBrowser.tsx # Dual-mode PC explorer & archive inspector
 │           │   ├── Toolbar.tsx     # Command bar with context menu status
+│           │   ├── VideoModal.tsx  # Video compressor, transcoder & preset selector
 │           │   ├── CreateModal.tsx # Archive creation with folder & file selectors
 │           │   ├── BenchmarkView.tsx # 2D Pareto frontier analytics dashboard
 │           │   └── ...             # Modals for extract, repair, preview, info
