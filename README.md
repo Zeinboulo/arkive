@@ -1,10 +1,20 @@
-# Arkive 🗜️
+<p align="center">
+  <img src="apps/desktop/resources/icon.png" width="128" height="128" alt="Arkive Logo" />
+</p>
 
-[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
-[![Rust](https://img.shields.io/badge/Rust-1.70+-orange.svg)](https://www.rust-lang.org/)
-[![Electron](https://img.shields.io/badge/Electron-Desktop-47848F.svg)](https://www.electronjs.org/)
-[![React](https://img.shields.io/badge/React-18-61DAFB.svg)](https://react.dev/)
-[![TypeScript](https://img.shields.io/badge/TypeScript-5.6-3178C6.svg)](https://www.typescriptlang.org/)
+<h1 align="center">Arkive</h1>
+
+<p align="center">
+  <strong>Next-Generation Systems Compression Engine & Modern Archive Manager</strong>
+</p>
+
+<p align="center">
+  <a href="https://opensource.org/licenses/MIT"><img src="https://img.shields.io/badge/License-MIT-blue.svg" alt="License: MIT" /></a>
+  <a href="https://www.rust-lang.org/"><img src="https://img.shields.io/badge/Rust-1.70+-orange.svg" alt="Rust" /></a>
+  <a href="https://www.electronjs.org/"><img src="https://img.shields.io/badge/Electron-Desktop-47848F.svg" alt="Electron" /></a>
+  <a href="https://react.dev/"><img src="https://img.shields.io/badge/React-18-61DAFB.svg" alt="React" /></a>
+  <a href="https://www.typescriptlang.org/"><img src="https://img.shields.io/badge/TypeScript-5.6-3178C6.svg" alt="TypeScript" /></a>
+</p>
 
 **Arkive** is an open-source, high-performance archive manager, systems compression engine, and data engineering toolkit designed as a modern alternative to legacy tools like WinRAR and 7-Zip.
 

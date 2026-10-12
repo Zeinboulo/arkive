@@ -101,12 +101,17 @@ function sendActionToWindow(act) {
 }
 
 function createWindow() {
+  const appIconPath = fs.existsSync(path.join(__dirname, '../resources/icon.ico'))
+    ? path.join(__dirname, '../resources/icon.ico')
+    : path.join(__dirname, '../resources/icon.png');
+
   mainWindow = new BrowserWindow({
     width: 1120,
     height: 740,
     minWidth: 850,
     minHeight: 550,
     title: 'Arkive — High-Performance Archive Manager',
+    icon: appIconPath,
     backgroundColor: '#100f0e',
     show: false,
     autoHideMenuBar: true,

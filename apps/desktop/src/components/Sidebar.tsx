@@ -13,6 +13,7 @@ import {
   Power,
 } from 'lucide-react';
 import { QuickPlace } from '../types';
+import { ArkiveLogo } from './ArkiveLogo';
 
 interface SidebarProps {
   onOpen: () => void;
@@ -73,9 +74,8 @@ const Heading: React.FC<{ children: React.ReactNode }> = ({ children }) => (
 
 export const Sidebar: React.FC<SidebarProps> = (p) => (
   <aside className="flex w-52 shrink-0 flex-col border-r border-slate-800 bg-slate-950">
-    <div className="flex items-center gap-2 px-4 pb-1 pt-4">
-      <span className="h-2.5 w-2.5 rounded-sm bg-sky-500" />
-      <span className="text-[15px] font-bold lowercase tracking-wide text-slate-50">arkive</span>
+    <div className="flex items-center px-3.5 pb-2.5 pt-3.5 border-b border-stone-850/80">
+      <ArkiveLogo size={28} withText />
     </div>
 
     <nav className="flex-1 overflow-y-auto px-2 pb-2">
