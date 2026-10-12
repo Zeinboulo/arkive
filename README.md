@@ -240,9 +240,9 @@ arkive/
 │   │   │   └── util.rs       # Path sanitization, date decoding, mtime handling
 │   └── arkive-cli/           # Fast CLI binary (clap, indicatif, tabled)
 ├── apps/
-│   └── desktop/              # Tauri + React + Vite + Tailwind desktop application
-│       ├── src/              # React UI (Toolbar, FileBrowser, BenchmarkView, Modals)
-│       └── src-tauri/        # Tauri v2 native bridge
+│   └── desktop/              # Electron + React + Vite + Tailwind desktop application
+│       ├── src/              # React UI (Sidebar, FileBrowser, BenchmarkView, Modals)
+│       └── electron/         # Electron host process & native IPC bridge
 ├── docs/
 │   └── benchmarks.md         # Data engineering algorithm trade-off analysis
 ├── LICENSE                   # MIT License

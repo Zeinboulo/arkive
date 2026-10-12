@@ -15,11 +15,11 @@ import {
   FolderOpen,
   Video,
 } from 'lucide-react';
-import { Entry, FsItem, QuickPlace } from '../types';
+import { Entry, FsItem } from '../types';
+import { formatBytes as formatBytesShared, isVideoPath } from '../format';
 
 interface FileBrowserProps {
   mode: 'archive' | 'explorer';
-  currentArchive: string | null;
   onCloseArchive: () => void;
 
   // Archive mode props
@@ -32,14 +32,12 @@ interface FileBrowserProps {
   fsItems: FsItem[];
   currentFsPath: string;
   onNavigateFs: (path: string) => void;
-  quickPlaces: QuickPlace[];
   onOpenArchiveFile: (path: string) => void;
   onCompressVideoFile?: (path: string) => void;
 
   // Common selection
   selectedItems: Set<string>;
   onToggleSelect: (path: string, isMulti: boolean) => void;
-  onSelectAll: () => void;
 
   // Drag & drop
   onDropFiles: (paths: string[]) => void;
@@ -47,7 +45,6 @@ interface FileBrowserProps {
 
 export const FileBrowser: React.FC<FileBrowserProps> = ({
   mode,
-  currentArchive,
   onCloseArchive,
   entries,
   archivePath,
@@ -56,7 +53,6 @@ export const FileBrowser: React.FC<FileBrowserProps> = ({
   fsItems,
   currentFsPath,
   onNavigateFs,
-  quickPlaces,
   onOpenArchiveFile,
   onCompressVideoFile,
   selectedItems,
@@ -143,7 +139,7 @@ export const FileBrowser: React.FC<FileBrowserProps> = ({
     if (isDir) return <Folder className="w-4 h-4 text-sky-400 fill-sky-400/20" />;
     if (isArchive) return <FileArchive className="w-4 h-4 text-purple-400 fill-purple-400/20" />;
     const ext = name.split('.').pop()?.toLowerCase();
-    if (['mp4', 'mkv', 'mov', 'avi', 'webm', 'flv', 'wmv', 'm4v', 'ts'].includes(ext || '')) {
+    if (isVideoPath(name)) {
       return <Video className="w-4 h-4 text-violet-400" />;
     }
     if (['png', 'jpg', 'jpeg', 'gif', 'webp', 'svg', 'ico'].includes(ext || '')) {
@@ -161,13 +157,7 @@ export const FileBrowser: React.FC<FileBrowserProps> = ({
     return <FileIcon className="w-4 h-4 text-slate-400" />;
   };
 
-  const formatBytes = (bytes: number) => {
-    if (bytes <= 0) return '-';
-    if (bytes < 1024) return `${bytes} B`;
-    if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
-    if (bytes < 1024 * 1024 * 1024) return `${(bytes / (1024 * 1024)).toFixed(2)} MB`;
-    return `${(bytes / (1024 * 1024 * 1024)).toFixed(2)} GB`;
-  };
+  const formatBytes = (bytes: number) => formatBytesShared(bytes, true);
 
   const handleDragOver = (e: React.DragEvent) => {
     e.preventDefault();
@@ -200,35 +190,12 @@ export const FileBrowser: React.FC<FileBrowserProps> = ({
     >
       {/* Drag & Drop Overlay */}
       {isDraggingOver && (
-        <div className="absolute inset-0 bg-emerald-950/80 backdrop-blur-sm z-40 border-2 border-dashed border-emerald-400 flex flex-col items-center justify-center pointer-events-none animate-in fade-in duration-100">
+        <div className="absolute inset-0 bg-emerald-950/80 z-40 border-2 border-dashed border-emerald-400 flex flex-col items-center justify-center pointer-events-none">
           <FileArchive className="w-14 h-14 text-emerald-400 mb-2 animate-bounce" />
           <h3 className="text-base font-bold text-white">Drop Files or Folders Here</h3>
           <p className="text-xs text-emerald-300 mt-1">
             Drop an archive to view its contents, or drop files/folders to compress them!
           </p>
-        </div>
-      )}
-
-      {/* Quick Places bar (in Explorer Mode) */}
-      {mode === 'explorer' && quickPlaces.length > 0 && (
-        <div className="bg-slate-850 px-4 py-1.5 border-b border-slate-800/80 flex items-center space-x-1 overflow-x-auto text-xs shrink-0">
-          <span className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider mr-1.5 flex items-center">
-            <HardDrive className="w-3.5 h-3.5 inline mr-1 text-slate-400" />
-            Places:
-          </span>
-          {quickPlaces.map((qp) => (
-            <button
-              key={qp.path}
-              onClick={() => onNavigateFs(qp.path)}
-              className={`px-2 py-0.5 rounded text-[11px] font-medium transition ${
-                currentFsPath.toLowerCase() === qp.path.toLowerCase()
-                  ? 'bg-sky-500/20 text-sky-300 border border-sky-500/40'
-                  : 'bg-slate-800 text-slate-300 hover:bg-slate-700 hover:text-white border border-slate-700/50'
-              }`}
-            >
-              {qp.name}
-            </button>
-          ))}
         </div>
       )}
 
@@ -442,8 +409,7 @@ export const FileBrowser: React.FC<FileBrowserProps> = ({
           ) : (
             explorerItems.map((item) => {
               const isSelected = selectedItems.has(item.path);
-              const ext = item.name.split('.').pop()?.toLowerCase();
-              const isVideo = !item.isDir && ['mp4', 'mkv', 'mov', 'avi', 'webm', 'flv', 'wmv', 'm4v', 'ts'].includes(ext || '');
+              const isVideo = !item.isDir && isVideoPath(item.name);
 
               return (
                 <div

@@ -17,7 +17,7 @@ Arkive is an open-source project designed to deliver modern, reliable archive ma
 ### 2. Repository Layout
 - `crates/arkive-core`: The core archive library (zero UI dependencies).
 - `crates/arkive-cli`: Command-line tool with progress bars and tables.
-- `apps/desktop`: Desktop application built with Tauri v2 and React.
+- `apps/desktop`: Desktop application built with Electron and React.
 - `docs/`: In-depth documentation on benchmarks and codecs.
 
 ### 3. Running Tests

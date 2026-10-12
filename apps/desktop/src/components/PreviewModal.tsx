@@ -1,5 +1,5 @@
 import React from 'react';
-import { X, FileText, Download, Copy, Check } from 'lucide-react';
+import { X, FileText, Copy, Check } from 'lucide-react';
 import { Entry } from '../types';
 
 interface PreviewModalProps {
@@ -29,8 +29,8 @@ export const PreviewModal: React.FC<PreviewModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 bg-black/75 backdrop-blur-sm z-50 flex items-center justify-center p-6">
-      <div className="bg-slate-850 border border-slate-700/80 rounded-xl w-full max-w-3xl h-[80vh] flex flex-col overflow-hidden shadow-2xl animate-in fade-in zoom-in-95 duration-150">
+    <div className="fixed inset-0 bg-black/75 z-50 flex items-center justify-center p-6">
+      <div className="bg-slate-850 border border-slate-700/80 rounded-xl w-full max-w-3xl h-[80vh] flex flex-col overflow-hidden shadow-2xl">
         <div className="px-5 py-3 border-b border-slate-700/60 flex items-center justify-between bg-slate-900/60">
           <div className="flex items-center space-x-2.5 truncate pr-4">
             <FileText className="w-4 h-4 text-sky-400 shrink-0" />

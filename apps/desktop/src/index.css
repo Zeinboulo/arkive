@@ -3,24 +3,32 @@
 @tailwind utilities;
 
 @layer base {
+  html,
+  body,
+  #root {
+    height: 100%;
+  }
   body {
-    @apply m-0 p-0 overflow-hidden font-sans;
+    @apply m-0 overflow-hidden bg-slate-900 font-sans text-slate-100 antialiased;
     user-select: none;
+  }
+  ::selection {
+    @apply bg-sky-500/30;
   }
 }
 
-/* Custom scrollbars */
+/* Slim, flat scrollbars */
 ::-webkit-scrollbar {
   width: 8px;
   height: 8px;
 }
 ::-webkit-scrollbar-track {
-  background: rgba(15, 23, 42, 0.6);
+  background: transparent;
 }
 ::-webkit-scrollbar-thumb {
-  background: rgba(51, 65, 85, 0.8);
+  background: #36332e;
   border-radius: 4px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: rgba(71, 85, 105, 1);
+  background: #4d4942;
 }

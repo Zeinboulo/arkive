@@ -5,13 +5,10 @@ import {
   Flame,
   Zap,
   HardDrive,
-  Cpu,
   Award,
   RefreshCw,
-  Sliders,
-  CheckCircle2,
-} from 'lucide-react';
-import { BenchConfig, BenchReport, BenchResult } from '../types';
+  } from 'lucide-react';
+import { BenchConfig, BenchReport } from '../types';
 
 interface BenchmarkViewProps {
   onRunBench: (config: BenchConfig) => Promise<void>;

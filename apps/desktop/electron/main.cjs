@@ -107,7 +107,7 @@ function createWindow() {
     minWidth: 850,
     minHeight: 550,
     title: 'Arkive — High-Performance Archive Manager',
-    backgroundColor: '#0f172a',
+    backgroundColor: '#100f0e',
     show: false,
     autoHideMenuBar: true,
     webPreferences: {
@@ -162,21 +162,6 @@ function createWindow() {
     mainWindow.loadURL('http://localhost:5173').catch((err) => {
       console.error('Failed to load dev server:', err);
       mainWindow.loadFile(indexPath).catch(() => {});
-    });
-  }
-
-  if (process.env.ARKIVE_SELFTEST) {
-    const log = [];
-    mainWindow.webContents.on('console-message', (_e, level, msg) => log.push(`console[${level}] ${msg}`));
-    mainWindow.webContents.on('did-fail-load', (_e, code, desc) => log.push(`did-fail-load ${code} ${desc}`));
-    mainWindow.webContents.on('did-finish-load', () => {
-      setTimeout(async () => {
-        const img = await mainWindow.webContents.capturePage();
-        fs.writeFileSync(process.env.ARKIVE_SELFTEST, img.toPNG());
-        const text = await mainWindow.webContents.executeJavaScript('document.body.innerText.length');
-        fs.writeFileSync(process.env.ARKIVE_SELFTEST + '.log', log.join('\n') + `\nbodyTextLength=${text}\nbinary=${findArkiveBinary()}\n`);
-        app.quit();
-      }, 2500);
     });
   }
 
@@ -326,15 +311,6 @@ ipcMain.handle('dialog:openFiles', async () => {
 ipcMain.handle('dialog:openFolder', async () => {
   const res = await dialog.showOpenDialog({
     title: 'Select Folder',
-    properties: ['openDirectory'],
-  });
-  if (res.canceled || res.filePaths.length === 0) return null;
-  return res.filePaths[0];
-});
-
-ipcMain.handle('dialog:selectFolder', async () => {
-  const res = await dialog.showOpenDialog({
-    title: 'Select Destination Folder',
     properties: ['openDirectory', 'createDirectory'],
   });
   if (res.canceled || res.filePaths.length === 0) return null;

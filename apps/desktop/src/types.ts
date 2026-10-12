@@ -110,14 +110,6 @@ export interface RepairReport {
   output: string;
 }
 
-export interface ProgressUpdate {
-  done: number;
-  total: number;
-  current: string;
-  percent: number;
-  speedMbS: number;
-}
-
 export interface VideoMetadata {
   path: string;
   filename: string;
@@ -174,7 +166,6 @@ declare global {
       openFilesDialog: () => Promise<string[]>;
       openFolderDialog: () => Promise<string | null>;
       saveArchiveDialog: (defaultName?: string) => Promise<string | null>;
-      selectFolderDialog: () => Promise<string | null>;
       openVideoDialog: () => Promise<string | null>;
       saveVideoDialog: (defaultName?: string) => Promise<string | null>;
 

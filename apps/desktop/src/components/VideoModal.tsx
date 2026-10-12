@@ -2,18 +2,15 @@ import React, { useState, useEffect } from 'react';
 import {
   X,
   Video,
-  Film,
   Sparkles,
   Sliders,
   CheckCircle2,
   AlertTriangle,
   FolderOpen,
-  ArrowRight,
   RefreshCw,
-  Gauge,
-  Layers,
   StopCircle,
 } from 'lucide-react';
+import { formatBytes } from '../format';
 import {
   VideoCodecType,
   VideoCompressOptions,
@@ -45,7 +42,7 @@ export const VideoModal: React.FC<VideoModalProps> = ({
   const [resolution, setResolution] = useState<VideoResolutionType>('original');
   const [targetMb, setTargetMb] = useState<string>('');
   const [crf, setCrf] = useState<number>(28);
-  const [audioBitrate, setAudioBitrate] = useState<number>(128);
+  const audioBitrate = 128;
 
   const [isCompressing, setIsCompressing] = useState(false);
   const [progress, setProgress] = useState<VideoProgressUpdate | null>(null);
@@ -201,14 +198,6 @@ export const VideoModal: React.FC<VideoModalProps> = ({
     }
   };
 
-  const formatBytes = (bytes: number) => {
-    if (!bytes || bytes <= 0) return '0 B';
-    if (bytes < 1024) return `${bytes} B`;
-    if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
-    if (bytes < 1024 * 1024 * 1024) return `${(bytes / (1024 * 1024)).toFixed(2)} MB`;
-    return `${(bytes / (1024 * 1024 * 1024)).toFixed(2)} GB`;
-  };
-
   const formatDuration = (secs: number) => {
     if (!secs || isNaN(secs)) return '0:00';
     const m = Math.floor(secs / 60);
@@ -219,8 +208,8 @@ export const VideoModal: React.FC<VideoModalProps> = ({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black/75 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-      <div className="bg-slate-850 border border-slate-700/80 rounded-xl w-full max-w-2xl overflow-hidden shadow-2xl animate-in fade-in zoom-in-95 duration-150 flex flex-col max-h-[90vh]">
+    <div className="fixed inset-0 bg-black/75 z-50 flex items-center justify-center p-4">
+      <div className="bg-slate-850 border border-slate-700/80 rounded-xl w-full max-w-2xl overflow-hidden shadow-2xl flex flex-col max-h-[90vh]">
         {/* Header */}
         <div className="px-5 py-3.5 border-b border-slate-700/60 flex items-center justify-between bg-slate-800/80 shrink-0">
           <div className="flex items-center space-x-2">
@@ -509,7 +498,7 @@ export const VideoModal: React.FC<VideoModalProps> = ({
 
           {/* Real-time Progress Bar */}
           {isCompressing && progress && (
-            <div className="bg-violet-950/40 border border-violet-500/40 rounded-lg p-3 space-y-2 animate-in fade-in">
+            <div className="bg-violet-950/40 border border-violet-500/40 rounded-lg p-3 space-y-2">
               <div className="flex justify-between items-center text-xs">
                 <span className="font-semibold text-violet-300 flex items-center space-x-1.5">
                   <RefreshCw className="w-3.5 h-3.5 animate-spin text-violet-400" />
@@ -530,7 +519,7 @@ export const VideoModal: React.FC<VideoModalProps> = ({
 
           {/* Results Summary Card */}
           {stats && (
-            <div className="bg-emerald-950/40 border border-emerald-500/40 rounded-lg p-3 text-slate-300 space-y-2 animate-in fade-in">
+            <div className="bg-emerald-950/40 border border-emerald-500/40 rounded-lg p-3 text-slate-300 space-y-2">
               <div className="flex items-center space-x-2 text-emerald-400 font-semibold text-sm">
                 <CheckCircle2 className="w-4 h-4" />
                 <span>Compression Successful!</span>

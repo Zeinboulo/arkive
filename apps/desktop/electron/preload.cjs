@@ -8,7 +8,6 @@ contextBridge.exposeInMainWorld('arkive', {
   openFilesDialog: () => ipcRenderer.invoke('dialog:openFiles'),
   openFolderDialog: () => ipcRenderer.invoke('dialog:openFolder'),
   saveArchiveDialog: (defaultName) => ipcRenderer.invoke('dialog:saveArchive', defaultName),
-  selectFolderDialog: () => ipcRenderer.invoke('dialog:selectFolder'),
 
   // Local File System Exploration
   readDirectory: (dirPath) => ipcRenderer.invoke('fs:readDirectory', dirPath),

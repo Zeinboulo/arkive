@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { X, Download, Folder, Lock, Check } from 'lucide-react';
+import { X, Download, FolderOpen } from 'lucide-react';
 
 export interface ExtractModalSubmitData {
   dest: string;
@@ -32,6 +32,12 @@ export const ExtractModal: React.FC<ExtractModalProps> = ({
     ? archivePath.replace(/\.[^/.]+$/, '')
     : 'extracted';
 
+  const handleBrowseFolder = async () => {
+    if (!window.arkive?.openFolderDialog) return;
+    const folder = await window.arkive.openFolderDialog();
+    if (folder) setDestPath(folder);
+  };
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     onSubmit({
@@ -43,8 +49,8 @@ export const ExtractModal: React.FC<ExtractModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-      <div className="bg-slate-850 border border-slate-700/80 rounded-xl w-full max-w-md overflow-hidden shadow-2xl animate-in fade-in zoom-in-95 duration-150">
+    <div className="fixed inset-0 bg-black/70 z-50 flex items-center justify-center p-4">
+      <div className="bg-slate-850 border border-slate-700/80 rounded-xl w-full max-w-md overflow-hidden shadow-2xl">
         <div className="px-5 py-3.5 border-b border-slate-700/60 flex items-center justify-between">
           <div className="flex items-center space-x-2">
             <Download className="w-4 h-4 text-amber-400" />
@@ -71,6 +77,15 @@ export const ExtractModal: React.FC<ExtractModalProps> = ({
                 onChange={(e) => setDestPath(e.target.value)}
                 className="w-full bg-transparent px-3 py-2 text-slate-100 focus:outline-none placeholder-slate-500"
               />
+              <button
+                type="button"
+                onClick={handleBrowseFolder}
+                className="px-2.5 py-2 bg-slate-700/60 hover:bg-slate-700 text-slate-300 hover:text-white border-l border-slate-700 transition flex items-center space-x-1 shrink-0"
+                title="Browse destination folder"
+              >
+                <FolderOpen className="w-3.5 h-3.5 text-amber-400" />
+                <span className="text-[11px]">Browse</span>
+              </button>
             </div>
             <p className="text-[10px] text-slate-400 mt-1">
               Extracts to a new folder named after the archive by default.

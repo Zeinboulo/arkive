@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 import {
   X,
   Archive,
-  Lock,
   Eye,
   EyeOff,
   FolderPlus,
@@ -113,8 +112,8 @@ export const CreateModal: React.FC<CreateModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-      <div className="bg-slate-850 border border-slate-700/80 rounded-xl w-full max-w-lg max-h-[90vh] flex flex-col overflow-hidden shadow-2xl animate-in fade-in zoom-in-95 duration-150">
+    <div className="fixed inset-0 bg-black/70 z-50 flex items-center justify-center p-4">
+      <div className="bg-slate-850 border border-slate-700/80 rounded-xl w-full max-w-lg max-h-[90vh] flex flex-col overflow-hidden shadow-2xl">
         <div className="px-5 py-3.5 border-b border-slate-700/60 flex items-center justify-between shrink-0">
           <div className="flex items-center space-x-2">
             <Archive className="w-4 h-4 text-emerald-400" />

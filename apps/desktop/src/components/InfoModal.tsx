@@ -1,5 +1,5 @@
 import React from 'react';
-import { X, Info, HardDrive, FileArchive, Lock, Percent } from 'lucide-react';
+import { X, Info } from 'lucide-react';
 import { ArchiveInfo } from '../types';
 
 interface InfoModalProps {
@@ -23,8 +23,8 @@ export const InfoModal: React.FC<InfoModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-      <div className="bg-slate-850 border border-slate-700/80 rounded-xl w-full max-w-md overflow-hidden shadow-2xl animate-in fade-in zoom-in-95 duration-150">
+    <div className="fixed inset-0 bg-black/70 z-50 flex items-center justify-center p-4">
+      <div className="bg-slate-850 border border-slate-700/80 rounded-xl w-full max-w-md overflow-hidden shadow-2xl">
         <div className="px-5 py-3.5 border-b border-slate-700/60 flex items-center justify-between">
           <div className="flex items-center space-x-2">
             <Info className="w-4 h-4 text-indigo-400" />

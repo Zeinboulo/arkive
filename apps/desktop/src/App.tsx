@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Toolbar } from './components/Toolbar';
+import { Sidebar } from './components/Sidebar';
 import { FileBrowser } from './components/FileBrowser';
 import { BenchmarkView } from './components/BenchmarkView';
 import { CreateModal, CreateModalSubmitData } from './components/CreateModal';
@@ -9,6 +9,7 @@ import { PreviewModal } from './components/PreviewModal';
 import { InfoModal } from './components/InfoModal';
 import { VideoModal } from './components/VideoModal';
 import { StatusBar } from './components/StatusBar';
+import { isArchivePath, isVideoPath } from './format';
 import {
   Entry,
   FsItem,
@@ -16,14 +17,11 @@ import {
   ArchiveInfo,
   BenchConfig,
   BenchReport,
-  ProgressUpdate,
   RepairReport,
   ExternalAction,
 } from './types';
 
 export const App: React.FC = () => {
-  const isDesktop = typeof window !== 'undefined' && Boolean(window.arkive?.isDesktop);
-
   const [selectedTab, setSelectedTab] = useState<'files' | 'bench'>('files');
   const [browserMode, setBrowserMode] = useState<'archive' | 'explorer'>('explorer');
 
@@ -63,9 +61,8 @@ export const App: React.FC = () => {
   const [benchProgressMsg, setBenchProgressMsg] = useState('');
   const [benchReport, setBenchReport] = useState<BenchReport | null>(null);
 
-  // Status & Progress
+  // Status
   const [statusMessage, setStatusMessage] = useState('Ready');
-  const [progress] = useState<ProgressUpdate | null>(null);
 
   // Load a local folder into Explorer Mode
   const loadDirectory = async (target?: string) => {
@@ -105,15 +102,9 @@ export const App: React.FC = () => {
   };
 
   const handleOpenVideoCompress = (targetPath?: string) => {
-    let p = targetPath;
-    if (!p && selectedEntries.size > 0) {
-      const first = Array.from(selectedEntries)[0];
-      const ext = first.split('.').pop()?.toLowerCase();
-      if (['mp4', 'mkv', 'mov', 'avi', 'webm', 'flv', 'wmv', 'm4v', 'ts'].includes(ext || '')) {
-        p = first;
-      }
-    }
-    setVideoModalPath(p || null);
+    const firstSelected = Array.from(selectedEntries)[0];
+    const p = targetPath ?? (firstSelected && isVideoPath(firstSelected) ? firstSelected : null);
+    setVideoModalPath(p);
     setIsVideoModalOpen(true);
   };
 
@@ -123,8 +114,7 @@ export const App: React.FC = () => {
     } else if (act.action === 'browse') {
       await loadDirectory(act.path);
     } else if (act.action === 'create') {
-      const ext = act.path.split('.').pop()?.toLowerCase();
-      if (['mp4', 'mkv', 'mov', 'avi', 'webm', 'flv', 'wmv', 'm4v', 'ts'].includes(ext || '')) {
+      if (isVideoPath(act.path)) {
         handleOpenVideoCompress(act.path);
       } else {
         setCreateInputs([act.path]);
@@ -227,10 +217,7 @@ export const App: React.FC = () => {
     // If an archive is selected in explorer mode, open and extract it
     if (browserMode === 'explorer') {
       const selected = Array.from(selectedEntries);
-      const archiveCandidate = selected.find((p) => {
-        const ext = p.split('.').pop()?.toLowerCase();
-        return ['zip', '7z', 'rar', 'tar', 'gz', 'bz2', 'xz', 'zst', 'tgz'].includes(ext || '');
-      });
+      const archiveCandidate = selected.find(isArchivePath);
       if (archiveCandidate) {
         openArchive(archiveCandidate).then(() => setIsExtractOpen(true));
         return;
@@ -352,8 +339,7 @@ export const App: React.FC = () => {
     if (paths.length === 0) return;
     if (paths.length === 1) {
       const p = paths[0];
-      const ext = p.split('.').pop()?.toLowerCase();
-      if (['zip', '7z', 'rar', 'tar', 'gz', 'bz2', 'xz', 'zst', 'tgz'].includes(ext || '')) {
+      if (isArchivePath(p)) {
         openArchive(p);
         return;
       }
@@ -372,32 +358,14 @@ export const App: React.FC = () => {
       ? archiveEntries.reduce((sum, e) => sum + e.size, 0)
       : fsItems.reduce((sum, i) => sum + i.size, 0);
 
-  return (
-    <div className="flex flex-col h-screen w-screen bg-slate-900 text-slate-100 select-none overflow-hidden font-sans">
-      {/* Top Application Header */}
-      <div className="bg-slate-950 px-4 py-2 border-b border-slate-800 flex items-center justify-between text-xs text-slate-400">
-        <div className="flex items-center space-x-2">
-          <span className="font-extrabold tracking-wider text-white text-sm bg-gradient-to-r from-sky-400 to-indigo-400 bg-clip-text text-transparent">
-            ARKIVE
-          </span>
-          <span className="text-slate-600">|</span>
-          <span className="text-slate-300 font-mono truncate max-w-lg">
-            {browserMode === 'archive' && currentArchive
-              ? currentArchive
-              : currentFsPath || 'File Explorer'}
-          </span>
-        </div>
-        <div className="flex items-center space-x-3 text-[11px]">
-          <span className="text-emerald-400 font-medium">
-            {isDesktop ? 'Native Windows Desktop' : 'Web Preview'}
-          </span>
-          <span className="text-slate-600">•</span>
-          <span>Rust Engine v0.1.0</span>
-        </div>
-      </div>
+  const goToFiles = (path: string) => {
+    setSelectedTab('files');
+    loadDirectory(path);
+  };
 
-      {/* Main Toolbar */}
-      <Toolbar
+  return (
+    <div className="flex h-screen w-screen overflow-hidden bg-slate-900 text-slate-100">
+      <Sidebar
         onOpen={handleOpenArchiveDialog}
         onOpenFolder={handleOpenFolderDialog}
         onCreate={handleCreateOpen}
@@ -405,77 +373,59 @@ export const App: React.FC = () => {
         onTest={handleTestArchive}
         onInfo={() => setIsInfoOpen(true)}
         onRepair={() => setIsRepairOpen(true)}
-        onBenchmark={() => setSelectedTab('bench')}
-        onVideoCompress={() => handleOpenVideoCompress()}
+        onVideo={() => handleOpenVideoCompress()}
+        onToggleBench={() => setSelectedTab(selectedTab === 'bench' ? 'files' : 'bench')}
         hasArchive={Boolean(currentArchive)}
-        selectedTab={selectedTab}
-        setSelectedTab={setSelectedTab}
-        browserMode={browserMode}
-        onToggleBrowserMode={() => {
-          if (browserMode === 'archive') {
-            setBrowserMode('explorer');
-          } else if (currentArchive) {
-            setBrowserMode('archive');
-          }
-        }}
+        benchActive={selectedTab === 'bench'}
         selectedCount={selectedEntries.size}
-        isContextMenuActive={isContextMenuActive}
-        onToggleContextMenu={handleToggleContextMenu}
+        places={quickPlaces}
+        currentPath={currentFsPath}
+        onNavigate={goToFiles}
+        shellActive={isContextMenuActive}
+        onToggleShell={handleToggleContextMenu}
       />
 
-      {/* Main Workspace Body */}
-      {selectedTab === 'files' ? (
-        <FileBrowser
-          mode={browserMode}
-          currentArchive={currentArchive}
-          onCloseArchive={() => setBrowserMode('explorer')}
-          entries={archiveEntries}
-          archivePath={archiveSubPath}
-          onNavigateArchive={setArchiveSubPath}
-          onPreviewArchive={handlePreview}
-          fsItems={fsItems}
-          currentFsPath={currentFsPath}
-          onNavigateFs={loadDirectory}
-          quickPlaces={quickPlaces}
-          onOpenArchiveFile={openArchive}
-          onCompressVideoFile={(path) => handleOpenVideoCompress(path)}
-          selectedItems={selectedEntries}
-          onToggleSelect={handleToggleSelect}
-          onSelectAll={() => {
-            const all =
-              browserMode === 'archive'
-                ? archiveEntries.map((e) => e.path)
-                : fsItems.map((i) => i.path);
-            setSelectedEntries(new Set(all));
-          }}
-          onDropFiles={handleDropFiles}
-        />
-      ) : (
-        <BenchmarkView
-          onRunBench={handleRunBench}
-          isRunning={isBenchRunning}
-          progressMsg={benchProgressMsg}
-          report={benchReport}
-        />
-      )}
+      <main className="flex min-w-0 flex-1 flex-col">
+        {selectedTab === 'files' ? (
+          <FileBrowser
+            mode={browserMode}
+            onCloseArchive={() => setBrowserMode('explorer')}
+            entries={archiveEntries}
+            archivePath={archiveSubPath}
+            onNavigateArchive={setArchiveSubPath}
+            onPreviewArchive={handlePreview}
+            fsItems={fsItems}
+            currentFsPath={currentFsPath}
+            onNavigateFs={loadDirectory}
+            onOpenArchiveFile={openArchive}
+            onCompressVideoFile={handleOpenVideoCompress}
+            selectedItems={selectedEntries}
+            onToggleSelect={handleToggleSelect}
+            onDropFiles={handleDropFiles}
+          />
+        ) : (
+          <BenchmarkView
+            onRunBench={handleRunBench}
+            isRunning={isBenchRunning}
+            progressMsg={benchProgressMsg}
+            report={benchReport}
+          />
+        )}
 
-      {/* Status Bar */}
-      <StatusBar
-        totalFiles={totalFiles}
-        totalBytes={totalBytes}
-        selectedCount={selectedEntries.size}
-        progress={progress}
-        statusMessage={statusMessage}
-      />
+        <StatusBar
+          totalFiles={totalFiles}
+          totalBytes={totalBytes}
+          selectedCount={selectedEntries.size}
+          statusMessage={statusMessage}
+        />
+      </main>
 
-      {/* Modals */}
       <CreateModal
         isOpen={isCreateOpen}
         onClose={() => setIsCreateOpen(false)}
         onSubmit={handleCreateSubmit}
         inputPaths={createInputs}
       />
-
       <ExtractModal
         isOpen={isExtractOpen}
         onClose={() => setIsExtractOpen(false)}
@@ -483,13 +433,11 @@ export const App: React.FC = () => {
         archivePath={currentArchive || ''}
         isEncrypted={archiveInfo?.encrypted || false}
       />
-
       <RepairModal
         isOpen={isRepairOpen}
         onClose={() => setIsRepairOpen(false)}
         onRepair={handleRepair}
       />
-
       <PreviewModal
         isOpen={Boolean(previewEntry)}
         onClose={() => setPreviewEntry(null)}
@@ -497,13 +445,7 @@ export const App: React.FC = () => {
         content={previewContent}
         isLoading={isPreviewLoading}
       />
-
-      <InfoModal
-        isOpen={isInfoOpen}
-        onClose={() => setIsInfoOpen(false)}
-        info={archiveInfo}
-      />
-
+      <InfoModal isOpen={isInfoOpen} onClose={() => setIsInfoOpen(false)} info={archiveInfo} />
       <VideoModal
         isOpen={isVideoModalOpen}
         onClose={() => setIsVideoModalOpen(false)}
