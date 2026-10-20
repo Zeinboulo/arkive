@@ -1,0 +1,45 @@
+<svg viewBox="0 0 512 512" width="512" height="512" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="ark-bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#131b2e" />
+      <stop offset="55%" stop-color="#0d1322" />
+      <stop offset="100%" stop-color="#090d18" />
+    </linearGradient>
+    <linearGradient id="ark-border" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#34d399" stop-opacity="0.45" />
+      <stop offset="50%" stop-color="#38bdf8" stop-opacity="0.2" />
+      <stop offset="100%" stop-color="#0f172a" stop-opacity="0.6" />
+    </linearGradient>
+    <linearGradient id="ark-left" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#6ee7b7" />
+      <stop offset="45%" stop-color="#10b981" />
+      <stop offset="100%" stop-color="#047857" />
+    </linearGradient>
+    <linearGradient id="ark-right" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#5eead4" />
+      <stop offset="50%" stop-color="#14b8a6" />
+      <stop offset="100%" stop-color="#0284c7" />
+    </linearGradient>
+    <linearGradient id="ark-base" x1="0%" y1="50%" x2="100%" y2="50%">
+      <stop offset="0%" stop-color="#059669" />
+      <stop offset="45%" stop-color="#0ea5e9" />
+      <stop offset="100%" stop-color="#2563eb" />
+    </linearGradient>
+    <linearGradient id="ark-core" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#ffffff" />
+      <stop offset="100%" stop-color="#a7f3d0" />
+    </linearGradient>
+  </defs>
+
+  <rect width="512" height="512" rx="120" fill="url(#ark-bg)" />
+  <rect x="4" y="4" width="504" height="504" rx="116" fill="none" stroke="url(#ark-border)" stroke-width="6" />
+
+  <g>
+    <path d="M 256 84 L 108 344 L 176 384 L 256 224 Z" fill="url(#ark-left)" />
+    <path d="M 256 84 L 404 344 L 336 384 L 256 224 Z" fill="url(#ark-right)" />
+    <path d="M 108 344 L 256 428 L 404 344 L 336 304 L 256 350 L 176 304 Z" fill="url(#ark-base)" />
+    <polygon points="256,216 310,248 256,280 202,248" fill="url(#ark-core)" />
+    <polygon points="202,248 256,280 256,336 202,304" fill="#10b981" opacity="0.9" />
+    <polygon points="310,248 256,280 256,336 310,304" fill="#0ea5e9" opacity="0.9" />
+  </g>
+</svg>

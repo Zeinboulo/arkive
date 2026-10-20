@@ -1,0 +1,957 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <!-- MANDATORY: Declare support for both light and dark themes (modern-web-guidance: dark-mode) -->
+  <meta name="color-scheme" content="light dark" />
+  <title>Arkive — Modern Archive Studio &amp; Radial Compression Engine</title>
+  <meta name="description" content="Open-source Rust &amp; Electron archive manager with a Right-Click Hold Radial Zip Format Wheel, Visual Folder Grid, ZIP repair, and FFmpeg video compression." />
+  <link rel="icon" type="image/svg+xml" href="./icon.svg" />
+  <style>
+    :root {
+      /* Raw light/dark tokens */
+      --bg-canvas-light: #f5f7fa;
+      --bg-canvas-dark: #11161d;
+      --bg-surface-light: #ffffff;
+      --bg-surface-dark: #171e27;
+      --bg-elevated-light: #edf1f6;
+      --bg-elevated-dark: #1e2733;
+      --text-primary-light: #0f1722;
+      --text-primary-dark: #f2f5f8;
+      --text-secondary-light: #4a596d;
+      --text-secondary-dark: #94a3b8;
+      --text-muted-light: #718296;
+      --text-muted-dark: #64748b;
+      --border-light: #dce3ec;
+      --border-dark: #263140;
+      --brand-jade-light: #059669;
+      --brand-jade-dark: #10b981;
+      --brand-ocean-light: #0284c7;
+      --brand-ocean-dark: #38bdf8;
+
+      /* Default fallback (light) */
+      --bg-canvas: var(--bg-canvas-light);
+      --bg-surface: var(--bg-surface-light);
+      --bg-elevated: var(--bg-elevated-light);
+      --text-primary: var(--text-primary-light);
+      --text-secondary: var(--text-secondary-light);
+      --text-muted: var(--text-muted-light);
+      --border-color: var(--border-light);
+      --brand: var(--brand-jade-light);
+      --brand-ocean: var(--brand-ocean-light);
+      --scrollbar-thumb: #b8c4d4;
+      --scrollbar-track: transparent;
+
+      /* MANDATORY: Fallback for browsers without light-dark() support */
+      @media (prefers-color-scheme: dark) {
+        --bg-canvas: var(--bg-canvas-dark);
+        --bg-surface: var(--bg-surface-dark);
+        --bg-elevated: var(--bg-elevated-dark);
+        --text-primary: var(--text-primary-dark);
+        --text-secondary: var(--text-secondary-dark);
+        --text-muted: var(--text-muted-dark);
+        --border-color: var(--border-dark);
+        --brand: var(--brand-jade-dark);
+        --brand-ocean: var(--brand-ocean-dark);
+        --scrollbar-thumb: #334155;
+      }
+
+      /* Modern light-dark() resolution */
+      @supports (color: light-dark(white, black)) {
+        --bg-canvas: light-dark(var(--bg-canvas-light), var(--bg-canvas-dark));
+        --bg-surface: light-dark(var(--bg-surface-light), var(--bg-surface-dark));
+        --bg-elevated: light-dark(var(--bg-elevated-light), var(--bg-elevated-dark));
+        --text-primary: light-dark(var(--text-primary-light), var(--text-primary-dark));
+        --text-secondary: light-dark(var(--text-secondary-light), var(--text-secondary-dark));
+        --text-muted: light-dark(var(--text-muted-light), var(--text-muted-dark));
+        --border-color: light-dark(var(--border-light), var(--border-dark));
+        --brand: light-dark(var(--brand-jade-light), var(--brand-jade-dark));
+        --brand-ocean: light-dark(var(--brand-ocean-light), var(--brand-ocean-dark));
+        --scrollbar-thumb: light-dark(#b8c4d4, #334155);
+      }
+
+      color-scheme: light dark;
+      accent-color: var(--brand);
+      scrollbar-width: thin;
+      scrollbar-color: var(--scrollbar-thumb) var(--scrollbar-track);
+    }
+
+    :root[data-theme="dark"] {
+      color-scheme: dark;
+      --bg-canvas: var(--bg-canvas-dark);
+      --bg-surface: var(--bg-surface-dark);
+      --bg-elevated: var(--bg-elevated-dark);
+      --text-primary: var(--text-primary-dark);
+      --text-secondary: var(--text-secondary-dark);
+      --text-muted: var(--text-muted-dark);
+      --border-color: var(--border-dark);
+      --brand: var(--brand-jade-dark);
+      --brand-ocean: var(--brand-ocean-dark);
+    }
+
+    :root[data-theme="light"] {
+      color-scheme: light;
+      --bg-canvas: var(--bg-canvas-light);
+      --bg-surface: var(--bg-surface-light);
+      --bg-elevated: var(--bg-elevated-light);
+      --text-primary: var(--text-primary-light);
+      --text-secondary: var(--text-secondary-light);
+      --text-muted: var(--text-muted-light);
+      --border-color: var(--border-light);
+      --brand: var(--brand-jade-light);
+      --brand-ocean: var(--brand-ocean-light);
+    }
+
+    @media (forced-colors: active) {
+      :root {
+        --border-color: ButtonText;
+        --brand: Highlight;
+        --scrollbar-thumb: ButtonText;
+        --scrollbar-track: Canvas;
+      }
+    }
+
+    @supports not (scrollbar-color: auto) {
+      ::-webkit-scrollbar {
+        width: 8px;
+        height: 8px;
+      }
+      ::-webkit-scrollbar-track {
+        background: var(--scrollbar-track);
+      }
+      ::-webkit-scrollbar-thumb {
+        background: var(--scrollbar-thumb);
+        border-radius: 999px;
+      }
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      background-color: var(--bg-canvas);
+      color: var(--text-primary);
+      font-family: "Segoe UI Variable Text", "Segoe UI", -apple-system, BlinkMacSystemFont, Inter, system-ui, sans-serif;
+      line-height: 1.5;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    a {
+      color: inherit;
+      text-decoration: none;
+    }
+
+    .container {
+      max-width: 1120px;
+      margin: 0 auto;
+      padding: 0 24px;
+    }
+
+    /* Top Navigation */
+    .navbar {
+      position: sticky;
+      top: 0;
+      z-index: 30;
+      background-color: color-mix(in oklab, var(--bg-canvas) 88%, transparent);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--border-color);
+    }
+
+    .navbar-inner {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      height: 64px;
+    }
+
+    .brand {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      font-weight: 650;
+      font-size: 17px;
+      letter-spacing: -0.01em;
+    }
+
+    .nav-links {
+      display: flex;
+      align-items: center;
+      gap: 20px;
+      font-size: 14px;
+      color: var(--text-secondary);
+    }
+
+    .nav-links a:hover {
+      color: var(--text-primary);
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      padding: 10px 18px;
+      border-radius: 8px;
+      font-size: 14px;
+      font-weight: 600;
+      border: 1px solid var(--border-color);
+      background-color: var(--bg-surface);
+      color: var(--text-primary);
+      cursor: pointer;
+      transition: background-color 0.15s, border-color 0.15s, transform 0.1s;
+    }
+
+    .btn:hover {
+      background-color: var(--bg-elevated);
+    }
+
+    .btn-primary {
+      background-color: #059669;
+      border-color: #10b981;
+      color: #ffffff;
+    }
+
+    .btn-primary:hover {
+      background-color: #10b981;
+    }
+
+    .btn-sm {
+      padding: 6px 12px;
+      font-size: 13px;
+    }
+
+    /* Hero Section */
+    .hero {
+      padding: 64px 0 40px;
+      text-align: center;
+    }
+
+    .hero-logo {
+      width: 76px;
+      height: 76px;
+      margin: 0 auto 20px;
+      display: block;
+    }
+
+    .hero h1 {
+      font-size: clamp(2rem, 4.2vw, 3.25rem);
+      font-weight: 700;
+      letter-spacing: -0.025em;
+      margin: 0 auto 14px;
+      max-width: 760px;
+      line-height: 1.15;
+    }
+
+    .hero p {
+      font-size: 17px;
+      color: var(--text-secondary);
+      max-width: 640px;
+      margin: 0 auto 28px;
+    }
+
+    .download-row {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+      margin-bottom: 12px;
+    }
+
+    .download-meta {
+      font-size: 12.5px;
+      color: var(--text-muted);
+    }
+
+    /* Interactive App Preview Replica */
+    .preview-shell {
+      margin: 36px auto 64px;
+      border-radius: 12px;
+      border: 1px solid var(--border-color);
+      background-color: var(--bg-surface);
+      overflow: hidden;
+      box-shadow: 0 20px 50px rgba(0, 0, 0, 0.22);
+      text-align: left;
+    }
+
+    .preview-titlebar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 10px 16px;
+      border-bottom: 1px solid var(--border-color);
+      background-color: var(--bg-elevated);
+      font-size: 12.5px;
+      color: var(--text-secondary);
+    }
+
+    .preview-body {
+      display: grid;
+      grid-template-columns: 210px 1fr;
+      min-height: 410px;
+    }
+
+    @media (max-width: 760px) {
+      .preview-body {
+        grid-template-columns: 1fr;
+      }
+      .preview-sidebar {
+        display: none;
+      }
+    }
+
+    .preview-sidebar {
+      border-right: 1px solid var(--border-color);
+      padding: 16px 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      background-color: color-mix(in oklab, var(--bg-canvas) 65%, var(--bg-surface));
+    }
+
+    .preview-nav-group {
+      display: flex;
+      flex-direction: column;
+      gap: 3px;
+    }
+
+    .preview-nav-label {
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--text-muted);
+      padding: 0 8px 4px;
+    }
+
+    .preview-nav-item {
+      padding: 6px 10px;
+      border-radius: 6px;
+      font-size: 13px;
+      color: var(--text-secondary);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .preview-nav-item.active {
+      background-color: color-mix(in oklab, var(--brand) 15%, transparent);
+      color: var(--brand);
+      font-weight: 600;
+    }
+
+    .preview-main {
+      display: flex;
+      flex-direction: column;
+      position: relative;
+      user-select: none;
+    }
+
+    .preview-toolbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 10px 16px;
+      border-bottom: 1px solid var(--border-color);
+      font-size: 13px;
+    }
+
+    .preview-crumbs {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      color: var(--text-secondary);
+    }
+
+    .preview-crumbs strong {
+      color: var(--text-primary);
+    }
+
+    .preview-hint {
+      font-size: 12px;
+      padding: 4px 10px;
+      border-radius: 6px;
+      background-color: color-mix(in oklab, var(--brand) 14%, transparent);
+      color: var(--brand);
+      font-weight: 500;
+    }
+
+    .preview-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(145px, 1fr));
+      gap: 12px;
+      padding: 20px;
+      flex: 1;
+    }
+
+    .folder-card {
+      border: 1px solid var(--border-color);
+      background-color: color-mix(in oklab, var(--bg-elevated) 55%, var(--bg-surface));
+      border-radius: 10px;
+      padding: 16px 12px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+      cursor: pointer;
+      transition: border-color 0.15s, background-color 0.15s;
+    }
+
+    .folder-card:hover,
+    .folder-card.selected {
+      border-color: var(--brand);
+      background-color: color-mix(in oklab, var(--brand) 10%, var(--bg-surface));
+    }
+
+    .folder-card-name {
+      font-size: 13px;
+      font-weight: 600;
+      margin-top: 8px;
+      max-width: 100%;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .folder-card-sub {
+      font-size: 11px;
+      color: var(--text-muted);
+      margin-top: 2px;
+    }
+
+    .preview-statusbar {
+      border-top: 1px solid var(--border-color);
+      padding: 8px 16px;
+      font-size: 12px;
+      color: var(--text-secondary);
+      display: flex;
+      justify-content: space-between;
+      background-color: var(--bg-elevated);
+    }
+
+    /* Feature Grid */
+    .section-title {
+      font-size: 24px;
+      font-weight: 700;
+      margin: 0 0 8px;
+      letter-spacing: -0.015em;
+    }
+
+    .section-sub {
+      color: var(--text-secondary);
+      margin: 0 0 28px;
+      font-size: 15px;
+    }
+
+    .features-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 16px;
+      margin-bottom: 64px;
+    }
+
+    .feature-card {
+      background-color: var(--bg-surface);
+      border: 1px solid var(--border-color);
+      border-radius: 10px;
+      padding: 22px;
+    }
+
+    .feature-card h3 {
+      margin: 0 0 8px;
+      font-size: 16px;
+      font-weight: 650;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .feature-card p {
+      margin: 0;
+      font-size: 14px;
+      color: var(--text-secondary);
+    }
+
+    /* Responsive Table (modern-web-guidance: responsive-table) */
+    .table-wrapper {
+      overflow: auto;
+      max-inline-size: 100%;
+      container-type: inline-size;
+      border: 1px solid var(--border-color);
+      border-radius: 10px;
+      background-color: var(--bg-surface);
+      margin-bottom: 64px;
+    }
+
+    .table-wrapper table {
+      border-collapse: separate;
+      border-spacing: 0;
+      width: 100%;
+      font-size: 13.5px;
+      text-align: left;
+    }
+
+    .table-wrapper thead {
+      position: sticky;
+      inset-block-start: 0;
+      z-index: 1;
+      background-color: var(--bg-elevated);
+    }
+
+    .table-wrapper th,
+    .table-wrapper td {
+      padding: 12px 16px;
+      border-bottom: 1px solid var(--border-color);
+    }
+
+    .table-wrapper tbody th {
+      position: sticky;
+      inset-inline-start: 0;
+      background-color: var(--bg-surface);
+      font-weight: 600;
+    }
+
+    @container (width < 600px) {
+      .table-wrapper table,
+      .table-wrapper thead,
+      .table-wrapper tbody,
+      .table-wrapper tr,
+      .table-wrapper th,
+      .table-wrapper td {
+        display: block;
+      }
+      .table-wrapper thead {
+        display: none;
+      }
+      .table-wrapper tr {
+        margin-block-end: 1rem;
+        border: 1px solid var(--border-color);
+      }
+      .table-wrapper tbody th {
+        position: sticky;
+        inset-block-start: 0;
+        z-index: 2;
+        background-color: var(--bg-elevated);
+      }
+    }
+
+    /* Radial Wheel Overlay for Interactive Demo */
+    #demo-wheel-backdrop {
+      position: fixed;
+      inset: 0;
+      z-index: 100;
+      background: rgba(10, 14, 20, 0.38);
+      backdrop-filter: blur(2px);
+      display: none;
+      user-select: none;
+    }
+
+    #demo-wheel-container {
+      position: fixed;
+      width: 290px;
+      height: 290px;
+      pointer-events: none;
+    }
+
+    footer {
+      border-top: 1px solid var(--border-color);
+      padding: 32px 0;
+      margin-top: 40px;
+      font-size: 13px;
+      color: var(--text-muted);
+      display: flex;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+  </style>
+</head>
+<body>
+  <header class="navbar">
+    <div class="container navbar-inner">
+      <a href="#" class="brand">
+        <img src="./icon.svg" width="28" height="28" alt="Arkive logo" />
+        <span>Arkive</span>
+      </a>
+      <nav class="nav-links">
+        <a href="#preview">Interactive Demo</a>
+        <a href="#features">Features</a>
+        <a href="#benchmarks">Benchmarks</a>
+        <a href="https://github.com/Zeinboulo/arkive" target="_blank" rel="noopener">GitHub</a>
+        <button type="button" id="theme-toggle" class="btn btn-sm" aria-label="Toggle color theme">
+          Theme
+        </button>
+      </nav>
+    </div>
+  </header>
+
+  <main class="container">
+    <!-- Hero -->
+    <section class="hero">
+      <img src="./icon.svg" alt="Arkive Origami Prism Icon" class="hero-logo" />
+      <h1>Modern Archive Studio &amp; Radial Compression Engine</h1>
+      <p>
+        An open-source Rust &amp; Electron replacement for legacy archivers. Browse folders visually,
+        hold right-click to spin the <strong>Radial Zip Format Wheel</strong>, repair damaged ZIP streams,
+        and compress videos with built-in FFmpeg.
+      </p>
+
+      <div class="download-row">
+        <a
+          class="btn btn-primary"
+          href="https://github.com/Zeinboulo/arkive/releases/latest/download/Arkive-Setup-0.1.0.exe"
+        >
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+            <polyline points="7 10 12 15 17 10" />
+            <line x1="12" y1="15" x2="12" y2="3" />
+          </svg>
+          <span>Download Installer (Windows x64)</span>
+        </a>
+
+        <a
+          class="btn"
+          href="https://github.com/Zeinboulo/arkive/releases/latest/download/Arkive-Portable-0.1.0.exe"
+        >
+          <span>Download Portable (.exe)</span>
+        </a>
+
+        <a
+          class="btn"
+          href="https://github.com/Zeinboulo/arkive/releases/latest"
+          target="_blank"
+          rel="noopener"
+        >
+          <span>All Releases (v0.1.0)</span>
+        </a>
+      </div>
+      <div class="download-meta">
+        Free &amp; Open Source (MIT License) · Windows 10 / 11 (64-bit) · Includes Rust CLI &amp; Explorer Shell Menu
+      </div>
+    </section>
+
+    <!-- Live Interactive Replica -->
+    <section id="preview" class="preview-shell" oncontextmenu="return false;">
+      <div class="preview-titlebar">
+        <span>Arkive — Interactive Studio Preview</span>
+        <span>Try it: Right-click &amp; hold (or click) any folder below</span>
+      </div>
+      <div class="preview-body">
+        <aside class="preview-sidebar">
+          <div class="preview-nav-group">
+            <div class="preview-nav-label">Locations</div>
+            <div class="preview-nav-item active">Projects</div>
+            <div class="preview-nav-item">Desktop</div>
+            <div class="preview-nav-item">Downloads</div>
+            <div class="preview-nav-item">Documents</div>
+          </div>
+          <div class="preview-nav-group">
+            <div class="preview-nav-label">Tools</div>
+            <div class="preview-nav-item">Open Archive…</div>
+            <div class="preview-nav-item">Compress Video</div>
+            <div class="preview-nav-item">Repair Archive</div>
+            <div class="preview-nav-item">Speed Benchmark</div>
+          </div>
+        </aside>
+
+        <div class="preview-main">
+          <div class="preview-toolbar">
+            <div class="preview-crumbs">
+              <span>C:</span>
+              <span>›</span>
+              <span>Users</span>
+              <span>›</span>
+              <strong>Projects</strong>
+            </div>
+            <span class="preview-hint">Right-click &amp; hold a folder to open the Radial Zip Wheel</span>
+          </div>
+
+          <div class="preview-grid" id="demo-folder-grid">
+            <!-- Populated by script -->
+          </div>
+
+          <div class="preview-statusbar">
+            <span id="demo-count">4 items · 142.8 MiB</span>
+            <span id="demo-status" style="color: var(--brand); font-weight: 600;">
+              Ready — right-click &amp; hold any folder to test the Radial Format Wheel
+            </span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Features -->
+    <section id="features">
+      <h2 class="section-title">Designed for Speed &amp; Clarity</h2>
+      <p class="section-sub">
+        Built from the ground up with a parallel Rust compression core and a calm, distraction-free interface.
+      </p>
+
+      <div class="features-grid">
+        <div class="feature-card">
+          <h3>Right-Click Hold Radial Wheel</h3>
+          <p>
+            Press and hold right-click on any folder, drag toward <code>.zip</code>, <code>.7z</code>,
+            <code>.tar.zst</code>, <code>.tar.gz</code>, or <code>.tar.xz</code>, and release to pack in one fluid motion.
+          </p>
+        </div>
+
+        <div class="feature-card">
+          <h3>Visual Folder Grid &amp; List View</h3>
+          <p>
+            Browse local drives and archives in a Finder-inspired visual folder grid or switch to a semantic table view with one click.
+          </p>
+        </div>
+
+        <div class="feature-card">
+          <h3>Parallel Rust Engine (Rayon)</h3>
+          <p>
+            Compresses files concurrently across all CPU cores using Zstandard, LZ4, XZ, Deflate, Bzip2, and 7-Zip LZMA2.
+          </p>
+        </div>
+
+        <div class="feature-card">
+          <h3>Windows Explorer Context Menu</h3>
+          <p>
+            Right-click any folder or archive directly in Windows File Explorer to compress or extract with Arkive.
+          </p>
+        </div>
+
+        <div class="feature-card">
+          <h3>Built-In FFmpeg Video Studio</h3>
+          <p>
+            Compress and transcode MP4, MKV, and MOV videos with 1-click presets for Discord (&lt;25 MB), H.264, HEVC, and 720p.
+          </p>
+        </div>
+
+        <div class="feature-card">
+          <h3>Corrupt ZIP Header Repair</h3>
+          <p>
+            Recovers truncated or damaged ZIP streams by scanning raw <code>PK\x03\x04</code> headers and reconstructing the Central Directory.
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <!-- Responsive Comparison Table -->
+    <section id="benchmarks">
+      <h2 class="section-title">Capability Comparison</h2>
+      <p class="section-sub">How Arkive compares with traditional desktop archive utilities.</p>
+
+      <div tabindex="0" role="region" aria-label="Archive manager capability comparison" class="table-wrapper">
+        <table>
+          <thead>
+            <tr>
+              <th scope="col">Capability</th>
+              <th scope="col">Arkive</th>
+              <th scope="col">WinRAR</th>
+              <th scope="col">7-Zip</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <th scope="row">Right-Click Hold Radial Format Wheel</th>
+              <td>Yes (7-sector instant dial)</td>
+              <td>No</td>
+              <td>No</td>
+            </tr>
+            <tr>
+              <th scope="row">Visual Folder Grid + Dual Theme</th>
+              <td>Yes (Nordic Slate &amp; Pearl)</td>
+              <td>Legacy Win32</td>
+              <td>Legacy Win32</td>
+            </tr>
+            <tr>
+              <th scope="row">Native Zstandard (.tar.zst / ZIP-Zstd)</th>
+              <td>Built-in (500+ MB/s)</td>
+              <td>No</td>
+              <td>Plugin required</td>
+            </tr>
+            <tr>
+              <th scope="row">Built-In Video Compressor (FFmpeg)</th>
+              <td>Yes (Discord / HEVC / H.264)</td>
+              <td>No</td>
+              <td>No</td>
+            </tr>
+            <tr>
+              <th scope="row">Pareto Codec Benchmark Suite</th>
+              <td>Built-in</td>
+              <td>No</td>
+              <td>Basic CPU test</td>
+            </tr>
+            <tr>
+              <th scope="row">License</th>
+              <td>MIT (Free &amp; Open Source)</td>
+              <td>Proprietary ($39)</td>
+              <td>LGPL</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+  </main>
+
+  <div class="container">
+    <footer>
+      <span>Arkive — Open Source MIT License · Created by Zeinboulo</span>
+      <span>
+        <a href="https://github.com/Zeinboulo/arkive">GitHub Repository</a> ·
+        <a href="https://github.com/Zeinboulo/arkive/releases/latest">Latest Release</a>
+      </span>
+    </footer>
+  </div>
+
+  <!-- Interactive Radial Wheel Overlay -->
+  <div id="demo-wheel-backdrop" oncontextmenu="return false;">
+    <div id="demo-wheel-container"></div>
+  </div>
+
+  <script>
+    // Theme toggle
+    const toggleBtn = document.getElementById('theme-toggle');
+    toggleBtn.addEventListener('click', () => {
+      const root = document.documentElement;
+      const current = root.getAttribute('data-theme');
+      const isDark = current ? current === 'dark' : window.matchMedia('(prefers-color-scheme: dark)').matches;
+      root.setAttribute('data-theme', isDark ? 'light' : 'dark');
+    });
+
+    // Interactive Demo Folders & Radial Wheel
+    const demoItems = [
+      { name: 'engine-core', isDir: true, sub: 'Folder' },
+      { name: 'dataset-2026', isDir: true, sub: 'Folder' },
+      { name: 'media-assets', isDir: true, sub: 'Folder' },
+      { name: 'release-notes.md', isDir: false, sub: '14.2 KiB' }
+    ];
+
+    const choices = [
+      { label: 'ZIP', ext: '.zip', desc: 'Universal Deflate' },
+      { label: '7-Zip', ext: '.7z', desc: 'Ultra LZMA2' },
+      { label: 'TAR.ZST', ext: '.tar.zst', desc: 'Fast Zstandard' },
+      { label: 'TAR.GZ', ext: '.tar.gz', desc: 'POSIX Gzip' },
+      { label: 'TAR.XZ', ext: '.tar.xz', desc: 'Cold Archival' },
+      { label: 'ZIP (Zstd)', ext: '.zip', desc: 'Modern Zstd ZIP' }
+    ];
+
+    const gridEl = document.getElementById('demo-folder-grid');
+    const statusEl = document.getElementById('demo-status');
+    const countEl = document.getElementById('demo-count');
+    const backdrop = document.getElementById('demo-wheel-backdrop');
+    const wheelBox = document.getElementById('demo-wheel-container');
+
+    let wheelState = { open: false, x: 0, y: 0, target: null, activeIdx: null };
+
+    function renderGrid() {
+      gridEl.innerHTML = '';
+      demoItems.forEach((item) => {
+        const card = document.createElement('div');
+        card.className = 'folder-card';
+        card.innerHTML = item.isDir
+          ? `<svg width="40" height="40" viewBox="0 0 48 48" fill="none">
+               <path d="M4 11C4 8.8 5.8 7 8 7H18.3L24 11H40C42.2 11 44 12.8 44 15V37C44 39.2 42.2 41 40 41H8C5.8 41 4 39.2 4 37V11Z" fill="#0d9488" fill-opacity="0.28"/>
+               <path d="M4 17C4 14.8 5.8 13 8 13H40C42.2 13 44 14.8 44 17V37C44 39.2 42.2 41 40 41H8C5.8 41 4 39.2 4 37V17Z" fill="#10b981"/>
+             </svg>`
+          : `<svg width="38" height="38" viewBox="0 0 48 48" fill="none">
+               <rect x="6" y="6" width="36" height="36" rx="8" fill="#0284c7" fill-opacity="0.22" stroke="#38bdf8" stroke-width="1.5"/>
+               <rect x="20" y="20" width="8" height="12" rx="2" fill="#34d399"/>
+             </svg>`;
+        const nameEl = document.createElement('div');
+        nameEl.className = 'folder-card-name';
+        nameEl.textContent = item.name;
+        const subEl = document.createElement('div');
+        subEl.className = 'folder-card-sub';
+        subEl.textContent = item.sub;
+        card.appendChild(nameEl);
+        card.appendChild(subEl);
+
+        card.addEventListener('mousedown', (e) => {
+          e.preventDefault();
+          openWheel(e.clientX, e.clientY, item);
+        });
+        gridEl.appendChild(card);
+      });
+      countEl.textContent = `${demoItems.length} items · 142.8 MiB`;
+    }
+
+    function polar(cx, cy, r, deg) {
+      const rad = ((deg - 90) * Math.PI) / 180;
+      return { x: cx + r * Math.cos(rad), y: cy + r * Math.sin(rad) };
+    }
+
+    function sectorPath(cx, cy, rIn, rOut, a0, a1) {
+      const sOut = polar(cx, cy, rOut, a1);
+      const eOut = polar(cx, cy, rOut, a0);
+      const sIn = polar(cx, cy, rIn, a1);
+      const eIn = polar(cx, cy, rIn, a0);
+      return `M ${sOut.x} ${sOut.y} A ${rOut} ${rOut} 0 0 0 ${eOut.x} ${eOut.y} L ${eIn.x} ${eIn.y} A ${rIn} ${rIn} 0 0 1 ${sIn.x} ${sIn.y} Z`;
+    }
+
+    function openWheel(x, y, item) {
+      const half = 145;
+      const cx = Math.max(half + 12, Math.min(window.innerWidth - half - 12, x));
+      const cy = Math.max(half + 12, Math.min(window.innerHeight - half - 12, y));
+      wheelState = { open: true, x: cx, y: cy, target: item, activeIdx: null };
+      backdrop.style.display = 'block';
+      wheelBox.style.left = `${cx - half}px`;
+      wheelBox.style.top = `${cy - half}px`;
+      drawWheel();
+    }
+
+    function drawWheel() {
+      const half = 145, rIn = 48, rOut = 126;
+      const slice = 360 / choices.length;
+      let svg = `<svg width="290" height="290" viewBox="0 0 290 290">`;
+      svg += `<circle cx="${half}" cy="${half}" r="${rOut + 5}" fill="#13181f" stroke="#263140" stroke-width="1.5"/>`;
+      choices.forEach((c, idx) => {
+        const center = idx * slice;
+        const active = wheelState.activeIdx === idx;
+        const d = sectorPath(half, half, rIn, active ? rOut + 5 : rOut, center - slice / 2 + 2, center + slice / 2 - 2);
+        svg += `<path d="${d}" fill="${active ? '#059669' : '#181e26'}" stroke="${active ? '#34d399' : '#263140'}" stroke-width="1.2"/>`;
+        const pos = polar(half, half, (rIn + rOut) / 2, center);
+        svg += `<text x="${pos.x}" y="${pos.y - 3}" text-anchor="middle" fill="#f2f5f8" font-size="11" font-weight="600">${c.label}</text>`;
+        svg += `<text x="${pos.x}" y="${pos.y + 11}" text-anchor="middle" fill="${active ? '#d1fae5' : '#94a3b8'}" font-size="9.5">${c.ext}</text>`;
+      });
+      svg += `<circle cx="${half}" cy="${half}" r="${rIn - 4}" fill="#11161d" stroke="#263140" stroke-width="1.5"/>`;
+      const activeChoice = wheelState.activeIdx !== null ? choices[wheelState.activeIdx] : null;
+      svg += `<text x="${half}" y="${half - 4}" text-anchor="middle" fill="#34d399" font-size="11" font-weight="700">${activeChoice ? activeChoice.ext : 'Compress'}</text>`;
+      svg += `<text x="${half}" y="${half + 10}" text-anchor="middle" fill="#94a3b8" font-size="8.5">${activeChoice ? activeChoice.desc : 'Drag & release'}</text>`;
+      svg += `</svg>`;
+      wheelBox.innerHTML = svg;
+    }
+
+    window.addEventListener('mousemove', (e) => {
+      if (!wheelState.open) return;
+      const dx = e.clientX - wheelState.x;
+      const dy = e.clientY - wheelState.y;
+      const dist = Math.hypot(dx, dy);
+      if (dist < 40 || dist > 160) {
+        wheelState.activeIdx = null;
+      } else {
+        let angle = (Math.atan2(dy, dx) * 180) / Math.PI + 90;
+        if (angle < 0) angle += 360;
+        const slice = 360 / choices.length;
+        wheelState.activeIdx = Math.floor(((angle + slice / 2) % 360) / slice);
+      }
+      drawWheel();
+    });
+
+    window.addEventListener('mouseup', () => {
+      if (!wheelState.open) return;
+      if (wheelState.activeIdx !== null && wheelState.target) {
+        const ch = choices[wheelState.activeIdx];
+        const newName = `${wheelState.target.name}${ch.ext}`;
+        if (!demoItems.some((i) => i.name === newName)) {
+          demoItems.push({ name: newName, isDir: false, sub: 'Archive · 4.1 MiB' });
+          renderGrid();
+        }
+        statusEl.textContent = `Packed ${newName} (${ch.desc})`;
+      }
+      wheelState.open = false;
+      backdrop.style.display = 'none';
+    });
+
+    renderGrid();
+  </script>
+</body>
+</html>
