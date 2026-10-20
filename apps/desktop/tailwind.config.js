@@ -1,20 +1,23 @@
 /**
- * Arkive theme: warm graphite surfaces with a single "ember" accent.
- * Legacy palette names (slate, sky, indigo, violet, purple) are remapped so the
- * whole UI shares one identity without per-component overrides.
+ * Arkive Eye-Care Theme:
+ * Uses CSS custom properties for surface and text tokens so the UI defaults to
+ * a low-glare "Soft Dusk" (Nordic Slate + Calm Sage Teal) and supports an
+ * instant "Warm Paper" (Alabaster Stone) light mode toggle.
  */
-const ember = {
-  50: '#fff4ec',
-  100: '#ffe4d1',
-  200: '#ffc6a0',
-  300: '#ffa774',
-  400: '#ff8e55',
-  500: '#ff7a3d',
-  600: '#e8601f',
-  700: '#bf4b14',
-  800: '#8f3a12',
-  900: '#6b2d10',
-  950: '#3b1706',
+const withAlpha = (varName) => `rgb(var(${varName}) / <alpha-value>)`;
+
+const sageTeal = {
+  50: '#f0fdfa',
+  100: '#ccfbf1',
+  200: '#99f6e4',
+  300: '#5eead4',
+  400: '#38b2a6',
+  500: '#2d9a8f',
+  600: '#237e75',
+  700: '#1d655f',
+  800: '#19504c',
+  900: '#16423f',
+  950: '#0b2726',
 };
 
 /** @type {import('tailwindcss').Config} */
@@ -23,37 +26,40 @@ export default {
   theme: {
     borderRadius: {
       none: '0',
-      sm: '3px',
-      DEFAULT: '4px',
-      md: '5px',
-      lg: '6px',
-      xl: '8px',
+      sm: '4px',
+      DEFAULT: '6px',
+      md: '8px',
+      lg: '10px',
+      xl: '14px',
+      '2xl': '18px',
       full: '9999px',
     },
     extend: {
       fontFamily: {
-        sans: ['"Segoe UI Variable Text"', '"Segoe UI"', 'system-ui', 'sans-serif'],
+        sans: ['"Segoe UI Variable Text"', '"Segoe UI"', 'Inter', 'system-ui', 'sans-serif'],
         mono: ['"Cascadia Mono"', 'Consolas', 'ui-monospace', 'monospace'],
       },
       colors: {
         slate: {
-          50: '#f5f3ef',
-          100: '#e9e5de',
-          200: '#d3cdc2',
-          300: '#b3ac9f',
-          400: '#8d867a',
-          500: '#6c665c',
-          600: '#4d4942',
-          700: '#36332e',
-          800: '#272522',
-          850: '#1f1d1b',
-          900: '#181715',
-          950: '#100f0e',
+          50: withAlpha('--c-slate-50'),
+          100: withAlpha('--c-slate-100'),
+          200: withAlpha('--c-slate-200'),
+          300: withAlpha('--c-slate-300'),
+          400: withAlpha('--c-slate-400'),
+          500: withAlpha('--c-slate-500'),
+          600: withAlpha('--c-slate-600'),
+          700: withAlpha('--c-slate-700'),
+          750: withAlpha('--c-slate-750'),
+          800: withAlpha('--c-slate-800'),
+          850: withAlpha('--c-slate-850'),
+          900: withAlpha('--c-slate-900'),
+          950: withAlpha('--c-slate-950'),
         },
-        sky: ember,
-        indigo: ember,
-        violet: ember,
-        purple: ember,
+        sky: sageTeal,
+        indigo: sageTeal,
+        violet: sageTeal,
+        purple: sageTeal,
+        emerald: sageTeal,
       },
     },
   },

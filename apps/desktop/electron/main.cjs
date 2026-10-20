@@ -112,7 +112,7 @@ function createWindow() {
     minHeight: 550,
     title: 'Arkive — High-Performance Archive Manager',
     icon: appIconPath,
-    backgroundColor: '#100f0e',
+    backgroundColor: '#1c2129',
     show: false,
     autoHideMenuBar: true,
     webPreferences: {

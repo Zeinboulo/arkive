@@ -2,7 +2,7 @@ import React from 'react';
 import {
   FolderOpen,
   Folder,
-  PlusCircle,
+  Plus,
   Download,
   ShieldCheck,
   Info,
@@ -11,6 +11,8 @@ import {
   Video,
   HardDrive,
   Power,
+  Sun,
+  Moon,
 } from 'lucide-react';
 import { QuickPlace } from '../types';
 import { ArkiveLogo } from './ArkiveLogo';
@@ -33,6 +35,8 @@ interface SidebarProps {
   onNavigate: (path: string) => void;
   shellActive: boolean;
   onToggleShell: () => void;
+  theme: 'dusk' | 'paper';
+  onToggleTheme: () => void;
 }
 
 interface ItemProps {
@@ -48,18 +52,24 @@ const Item: React.FC<ItemProps> = ({ icon, label, onClick, disabled, active, bad
   <button
     onClick={onClick}
     disabled={disabled}
-    className={`group flex w-full items-center gap-2.5 rounded-md px-2.5 py-1.5 text-left text-[13px] transition-colors ${
+    className={`group flex w-full items-center gap-2.5 rounded-lg px-3 py-1.5 text-left text-[12.5px] font-medium transition-all ${
       disabled
-        ? 'cursor-not-allowed text-slate-600'
+        ? 'cursor-not-allowed text-slate-600 opacity-60'
         : active
-        ? 'bg-sky-500/15 text-sky-300'
-        : 'text-slate-300 hover:bg-slate-800 hover:text-slate-50'
+        ? 'bg-sky-500/15 text-sky-400 shadow-sm ring-1 ring-sky-500/25'
+        : 'text-slate-300 hover:bg-slate-800/80 hover:text-slate-50'
     }`}
   >
-    <span className={disabled ? 'text-slate-600' : 'text-sky-400'}>{icon}</span>
+    <span
+      className={`transition-colors ${
+        disabled ? 'text-slate-600' : active ? 'text-sky-400' : 'text-slate-400 group-hover:text-sky-400'
+      }`}
+    >
+      {icon}
+    </span>
     <span className="flex-1 truncate">{label}</span>
     {badge ? (
-      <span className="rounded bg-sky-500/20 px-1.5 text-[10px] font-semibold text-sky-300">
+      <span className="rounded-full bg-sky-500/20 px-1.5 py-0.2 text-[10px] font-semibold text-sky-300">
         {badge}
       </span>
     ) : null}
@@ -67,55 +77,70 @@ const Item: React.FC<ItemProps> = ({ icon, label, onClick, disabled, active, bad
 );
 
 const Heading: React.FC<{ children: React.ReactNode }> = ({ children }) => (
-  <div className="px-2.5 pb-1 pt-4 text-[10px] font-semibold uppercase tracking-[0.14em] text-slate-500">
+  <div className="px-3 pb-1 pt-4 text-[10px] font-semibold uppercase tracking-[0.12em] text-slate-500">
     {children}
   </div>
 );
 
 export const Sidebar: React.FC<SidebarProps> = (p) => (
-  <aside className="flex w-52 shrink-0 flex-col border-r border-slate-800 bg-slate-950">
-    <div className="flex items-center px-3.5 pb-2.5 pt-3.5 border-b border-stone-850/80">
+  <aside className="flex w-56 shrink-0 flex-col border-r border-slate-800 bg-slate-950/90 px-2.5 py-3">
+    {/* Brand & Theme Switcher */}
+    <div className="flex items-center justify-between px-1.5 pb-3 border-b border-slate-800/80">
       <ArkiveLogo size={28} withText />
+      <button
+        onClick={p.onToggleTheme}
+        title={
+          p.theme === 'dusk'
+            ? 'Switch to Warm Paper (Daylight Eye-Care)'
+            : 'Switch to Soft Dusk (Low-Glare Dark)'
+        }
+        className="flex h-7 w-7 items-center justify-center rounded-lg border border-slate-800 bg-slate-900 text-slate-400 transition hover:border-slate-700 hover:text-sky-400"
+      >
+        {p.theme === 'dusk' ? <Sun size={14} /> : <Moon size={14} />}
+      </button>
     </div>
 
-    <nav className="flex-1 overflow-y-auto px-2 pb-2">
-      <Heading>Archives</Heading>
-      <Item icon={<FolderOpen size={15} />} label="Open archive" onClick={p.onOpen} />
-      <Item icon={<Folder size={15} />} label="Browse folder" onClick={p.onOpenFolder} />
-      <Item
-        icon={<PlusCircle size={15} />}
-        label={p.selectedCount > 0 ? 'Compress selection' : 'New archive'}
-        badge={p.selectedCount || undefined}
+    {/* Primary Action Button */}
+    <div className="pt-3 px-1">
+      <button
         onClick={p.onCreate}
-      />
+        className="flex w-full items-center justify-center gap-2 rounded-xl bg-sky-600 px-3 py-2 text-xs font-semibold text-white shadow-sm transition hover:bg-sky-500 active:scale-[0.99]"
+      >
+        <Plus size={15} strokeWidth={2.5} />
+        <span>{p.selectedCount > 0 ? `Compress (${p.selectedCount})` : 'New Archive'}</span>
+      </button>
+    </div>
+
+    <nav className="flex-1 overflow-y-auto pt-1 pb-2 space-y-0.5">
+      <Heading>Workspace</Heading>
+      <Item icon={<FolderOpen size={15} />} label="Open Archive…" onClick={p.onOpen} />
+      <Item icon={<Folder size={15} />} label="Browse Folder…" onClick={p.onOpenFolder} />
       <Item
         icon={<Download size={15} />}
-        label="Extract"
+        label="Extract Archive"
         onClick={p.onExtract}
         disabled={!p.hasArchive && p.selectedCount === 0}
       />
-      <Item icon={<ShieldCheck size={15} />} label="Verify" onClick={p.onTest} disabled={!p.hasArchive} />
 
-      <Heading>Media</Heading>
-      <Item icon={<Video size={15} />} label="Compress video" onClick={p.onVideo} />
-
-      <Heading>Tools</Heading>
-      <Item icon={<Info size={15} />} label="Archive info" onClick={p.onInfo} disabled={!p.hasArchive} />
-      <Item icon={<Wrench size={15} />} label="Repair ZIP" onClick={p.onRepair} />
+      <Heading>Utilities</Heading>
+      <Item icon={<Video size={15} />} label="Video Compressor" onClick={p.onVideo} />
+      <Item icon={<Wrench size={15} />} label="Repair Broken ZIP" onClick={p.onRepair} />
+      <Item icon={<ShieldCheck size={15} />} label="Verify Integrity" onClick={p.onTest} disabled={!p.hasArchive} />
+      <Item icon={<Info size={15} />} label="Archive Details" onClick={p.onInfo} disabled={!p.hasArchive} />
       <Item
         icon={<Gauge size={15} />}
-        label="Benchmark"
+        label="Codec Benchmark"
         onClick={p.onToggleBench}
         active={p.benchActive}
       />
 
       {p.places.length > 0 && (
         <>
-          <Heading>Places</Heading>
+          <Heading>Quick Places</Heading>
           {p.places.map((pl) => (
             <Item
               key={pl.path}
-              icon={<HardDrive size={15} />}
+              icon={<HardDrive size={14} />}
               label={pl.name}
               onClick={() => p.onNavigate(pl.path)}
               active={!p.benchActive && p.currentPath.toLowerCase() === pl.path.toLowerCase()}
@@ -125,13 +150,25 @@ export const Sidebar: React.FC<SidebarProps> = (p) => (
       )}
     </nav>
 
-    <button
-      onClick={p.onToggleShell}
-      title="Add or remove Arkive from the Windows Explorer right-click menu"
-      className="mx-2 mb-3 flex items-center gap-2 rounded-md border border-slate-800 px-2.5 py-1.5 text-[11px] text-slate-400 transition-colors hover:border-slate-700 hover:text-slate-200"
-    >
-      <Power size={13} className={p.shellActive ? 'text-emerald-400' : 'text-slate-600'} />
-      <span>Explorer menu: {p.shellActive ? 'on' : 'off'}</span>
-    </button>
+    {/* Footer Controls */}
+    <div className="pt-2 border-t border-slate-800/80 space-y-1.5">
+      <button
+        onClick={p.onToggleShell}
+        title="Add or remove Arkive from the Windows Explorer right-click menu"
+        className="flex w-full items-center justify-between rounded-lg border border-slate-800/90 bg-slate-900/70 px-3 py-1.5 text-[11px] text-slate-400 transition-colors hover:border-slate-700 hover:text-slate-200"
+      >
+        <span className="flex items-center gap-2">
+          <Power size={12} className={p.shellActive ? 'text-sky-400' : 'text-slate-500'} />
+          <span>Explorer Shell Menu</span>
+        </span>
+        <span
+          className={`rounded px-1.5 py-0.2 text-[9.5px] font-semibold uppercase ${
+            p.shellActive ? 'bg-sky-500/15 text-sky-400' : 'bg-slate-800 text-slate-500'
+          }`}
+        >
+          {p.shellActive ? 'On' : 'Off'}
+        </span>
+      </button>
+    </div>
   </aside>
 );

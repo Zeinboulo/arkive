@@ -2,6 +2,57 @@
 @tailwind components;
 @tailwind utilities;
 
+:root {
+  color-scheme: dark;
+
+  /* Soft Dusk (Low-glare Nordic Slate — easy on the eyes) */
+  --c-slate-50: 240 244 248;
+  --c-slate-100: 226 232 240;
+  --c-slate-200: 205 214 226;
+  --c-slate-300: 174 186 201;
+  --c-slate-400: 139 152 169;
+  --c-slate-500: 107 120 138;
+  --c-slate-600: 78 90 106;
+  --c-slate-700: 56 66 79;
+  --c-slate-750: 48 56 68;
+  --c-slate-800: 41 48 58;
+  --c-slate-850: 34 40 49;
+  --c-slate-900: 28 33 41;
+  --c-slate-950: 22 26 33;
+
+  --scrollbar-thumb: rgb(56 66 79);
+  --scrollbar-track: transparent;
+}
+
+:root[data-theme='paper'] {
+  color-scheme: light;
+
+  /* Warm Paper (Soothing E-Ink / Alabaster Stone for daytime eye comfort) */
+  --c-slate-50: 24 28 32;
+  --c-slate-100: 34 39 45;
+  --c-slate-200: 48 54 62;
+  --c-slate-300: 72 80 90;
+  --c-slate-400: 104 113 124;
+  --c-slate-500: 132 140 150;
+  --c-slate-600: 168 164 156;
+  --c-slate-700: 214 209 199;
+  --c-slate-750: 225 220 211;
+  --c-slate-800: 233 229 220;
+  --c-slate-850: 248 246 241;
+  --c-slate-900: 242 239 232;
+  --c-slate-950: 235 231 223;
+
+  --scrollbar-thumb: rgb(196 190 180);
+  --scrollbar-track: transparent;
+}
+
+@media (forced-colors: active) {
+  :root {
+    --scrollbar-thumb: ButtonText;
+    --scrollbar-track: Canvas;
+  }
+}
+
 @layer base {
   html,
   body,
@@ -13,22 +64,27 @@
     user-select: none;
   }
   ::selection {
-    @apply bg-sky-500/30;
+    @apply bg-sky-500/25;
   }
 }
 
-/* Slim, flat scrollbars */
-::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
+/* Standard modern scrollbar properties */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--scrollbar-thumb) var(--scrollbar-track);
 }
-::-webkit-scrollbar-track {
-  background: transparent;
-}
-::-webkit-scrollbar-thumb {
-  background: #36332e;
-  border-radius: 4px;
-}
-::-webkit-scrollbar-thumb:hover {
-  background: #4d4942;
+
+/* Legacy fallback for WebKit/Blink browsers */
+@supports not (scrollbar-color: auto) {
+  ::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+  ::-webkit-scrollbar-track {
+    background: var(--scrollbar-track);
+  }
+  ::-webkit-scrollbar-thumb {
+    background: var(--scrollbar-thumb);
+    border-radius: 4px;
+  }
 }

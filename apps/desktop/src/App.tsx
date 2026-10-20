@@ -9,6 +9,7 @@ import { PreviewModal } from './components/PreviewModal';
 import { InfoModal } from './components/InfoModal';
 import { VideoModal } from './components/VideoModal';
 import { StatusBar } from './components/StatusBar';
+import { RadialZipChoice } from './components/RadialZipWheel';
 import { isArchivePath, isVideoPath } from './format';
 import {
   Entry,
@@ -24,6 +25,10 @@ import {
 export const App: React.FC = () => {
   const [selectedTab, setSelectedTab] = useState<'files' | 'bench'>('files');
   const [browserMode, setBrowserMode] = useState<'archive' | 'explorer'>('explorer');
+  const [theme, setTheme] = useState<'dusk' | 'paper'>(() => {
+    const saved = localStorage.getItem('arkive-theme');
+    return saved === 'paper' ? 'paper' : 'dusk';
+  });
 
   // Archive Mode State
   const [currentArchive, setCurrentArchive] = useState<string | null>(null);
@@ -61,8 +66,15 @@ export const App: React.FC = () => {
   const [benchProgressMsg, setBenchProgressMsg] = useState('');
   const [benchReport, setBenchReport] = useState<BenchReport | null>(null);
 
-  // Status
+  // Status & Background Activity
   const [statusMessage, setStatusMessage] = useState('Ready');
+  const [isBusy, setIsBusy] = useState(false);
+  const [recentArchivePath, setRecentArchivePath] = useState<string | null>(null);
+
+  useEffect(() => {
+    document.documentElement.dataset.theme = theme;
+    localStorage.setItem('arkive-theme', theme);
+  }, [theme]);
 
   // Load a local folder into Explorer Mode
   const loadDirectory = async (target?: string) => {
@@ -85,7 +97,8 @@ export const App: React.FC = () => {
   const openArchive = async (filePath: string) => {
     if (!window.arkive?.listArchive || !window.arkive?.getArchiveInfo) return;
     try {
-      setStatusMessage(`Loading ${filePath}...`);
+      setIsBusy(true);
+      setStatusMessage(`Opening ${filePath}...`);
       const list = await window.arkive.listArchive(filePath);
       const info = await window.arkive.getArchiveInfo(filePath);
       setCurrentArchive(filePath);
@@ -94,10 +107,13 @@ export const App: React.FC = () => {
       setArchiveSubPath('');
       setSelectedEntries(new Set());
       setBrowserMode('archive');
+      setRecentArchivePath(null);
       setStatusMessage(`Opened ${filePath} (${list.length} entries)`);
     } catch (err: any) {
       alert(`Failed to open archive:\n${err?.message || err}`);
       setStatusMessage('Error opening archive');
+    } finally {
+      setIsBusy(false);
     }
   };
 
@@ -176,7 +192,6 @@ export const App: React.FC = () => {
   };
 
   const handleCreateOpen = () => {
-    // If user has items selected in explorer mode, prefill them!
     if (browserMode === 'explorer' && selectedEntries.size > 0) {
       setCreateInputs(Array.from(selectedEntries));
     } else {
@@ -190,6 +205,7 @@ export const App: React.FC = () => {
     try {
       const savePath = await window.arkive.saveArchiveDialog(opts.name);
       if (!savePath) return;
+      setIsBusy(true);
       setStatusMessage(`Creating ${savePath}...`);
       await window.arkive.createArchive({
         archive: savePath,
@@ -201,11 +217,60 @@ export const App: React.FC = () => {
         method: opts.zipMethod,
       });
       setStatusMessage(`Created archive ${savePath}`);
-      // Open the newly created archive
       await openArchive(savePath);
     } catch (err: any) {
       alert(`Failed to create archive:\n${err?.message || err}`);
       setStatusMessage('Creation failed');
+    } finally {
+      setIsBusy(false);
+    }
+  };
+
+  // Instant Compression via Right-Click Hold Radial Wheel
+  const handleQuickCompressChoice = async (choice: RadialZipChoice, targetPath: string) => {
+    if (choice.isCustomModal) {
+      setCreateInputs([targetPath]);
+      setIsCreateOpen(true);
+      return;
+    }
+
+    if (!window.arkive?.createArchive) {
+      setCreateInputs([targetPath]);
+      setIsCreateOpen(true);
+      return;
+    }
+
+    const cleanTarget = targetPath.replace(/[\\/]$/, '').replace(/\\/g, '/');
+    const outputArchivePath = `${cleanTarget}.${choice.format}`;
+    const baseName = cleanTarget.split('/').pop() || 'archive';
+
+    try {
+      setIsBusy(true);
+      setRecentArchivePath(null);
+      setStatusMessage(`Packing "${baseName}" into ${baseName}.${choice.format} (${choice.label})...`);
+
+      await window.arkive.createArchive({
+        archive: outputArchivePath,
+        inputs: [targetPath],
+        format: choice.format,
+        level: choice.level,
+        threads: 0,
+        method: choice.zipMethod,
+      });
+
+      if (currentFsPath && window.arkive?.readDirectory) {
+        const res = await window.arkive.readDirectory(currentFsPath);
+        setFsItems(res.items);
+        setSelectedEntries(new Set([outputArchivePath]));
+      }
+
+      setRecentArchivePath(outputArchivePath);
+      setStatusMessage(`Packed ${baseName}.${choice.format}`);
+    } catch (err: any) {
+      alert(`Failed to compress folder:\n${err?.message || err}`);
+      setStatusMessage('Quick compression failed');
+    } finally {
+      setIsBusy(false);
     }
   };
 
@@ -214,7 +279,6 @@ export const App: React.FC = () => {
       setIsExtractOpen(true);
       return;
     }
-    // If an archive is selected in explorer mode, open and extract it
     if (browserMode === 'explorer') {
       const selected = Array.from(selectedEntries);
       const archiveCandidate = selected.find(isArchivePath);
@@ -229,6 +293,7 @@ export const App: React.FC = () => {
   const handleExtractSubmit = async (opts: ExtractModalSubmitData) => {
     if (!window.arkive?.extractArchive || !currentArchive) return;
     try {
+      setIsBusy(true);
       setStatusMessage(`Extracting to ${opts.dest}...`);
       await window.arkive.extractArchive({
         archive: currentArchive,
@@ -241,12 +306,15 @@ export const App: React.FC = () => {
     } catch (err: any) {
       alert(`Extraction failed:\n${err?.message || err}`);
       setStatusMessage('Extraction failed');
+    } finally {
+      setIsBusy(false);
     }
   };
 
   const handleTestArchive = async () => {
     if (!window.arkive?.testArchive || !currentArchive) return;
     try {
+      setIsBusy(true);
       setStatusMessage('Testing integrity...');
       const out = await window.arkive.testArchive(currentArchive);
       setStatusMessage('Integrity verified');
@@ -254,6 +322,8 @@ export const App: React.FC = () => {
     } catch (err: any) {
       alert(`Test failed:\n${err?.message || err}`);
       setStatusMessage('Integrity test failed');
+    } finally {
+      setIsBusy(false);
     }
   };
 
@@ -383,6 +453,8 @@ export const App: React.FC = () => {
         onNavigate={goToFiles}
         shellActive={isContextMenuActive}
         onToggleShell={handleToggleContextMenu}
+        theme={theme}
+        onToggleTheme={() => setTheme((t) => (t === 'dusk' ? 'paper' : 'dusk'))}
       />
 
       <main className="flex min-w-0 flex-1 flex-col">
@@ -399,6 +471,7 @@ export const App: React.FC = () => {
             onNavigateFs={loadDirectory}
             onOpenArchiveFile={openArchive}
             onCompressVideoFile={handleOpenVideoCompress}
+            onQuickCompressChoice={handleQuickCompressChoice}
             selectedItems={selectedEntries}
             onToggleSelect={handleToggleSelect}
             onDropFiles={handleDropFiles}
@@ -417,6 +490,9 @@ export const App: React.FC = () => {
           totalBytes={totalBytes}
           selectedCount={selectedEntries.size}
           statusMessage={statusMessage}
+          isBusy={isBusy}
+          recentArchivePath={recentArchivePath}
+          onOpenRecentArchive={openArchive}
         />
       </main>
 

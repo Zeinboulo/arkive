@@ -159,15 +159,15 @@ export const ArkiveLogo: React.FC<ArkiveLogoProps> = ({
       {withText && (
         <div className="flex flex-col leading-none">
           <div className="flex items-center gap-1.5">
-            <span className="text-[14px] font-bold tracking-tight text-white font-mono lowercase">
+            <span className="text-[14px] font-bold tracking-tight text-slate-50 font-mono lowercase">
               arkive
             </span>
-            <span className="text-[9px] font-semibold uppercase tracking-wider text-amber-500/90 bg-amber-500/10 px-1 py-0.5 rounded border border-amber-500/20">
+            <span className="text-[9px] font-semibold uppercase tracking-wider text-sky-400 bg-sky-500/15 px-1.5 py-0.5 rounded-full border border-sky-500/25">
               v0.1
             </span>
           </div>
-          <span className="text-[9px] text-stone-500 font-medium tracking-wide">
-            High-Performance Archive
+          <span className="text-[9.5px] text-slate-400 font-medium tracking-wide mt-0.5">
+            Archive Studio
           </span>
         </div>
       )}
