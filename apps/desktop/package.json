@@ -19,6 +19,7 @@
     "appId": "io.github.zeinboulo.arkive",
     "productName": "Arkive",
     "executableName": "Arkive",
+    "asar": false,
     "directories": {
       "output": "release"
     },

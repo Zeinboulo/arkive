@@ -208,17 +208,21 @@ if (!gotLock) {
   });
 
   app.whenReady().then(() => {
-    // Auto-register context menu on startup
-    try {
-      const currentExe = resolvePermanentExePath();
-      if (fs.existsSync(currentExe)) {
-        registerContextMenu(currentExe);
-      }
-    } catch (err) {
-      console.error('Context menu auto-registration:', err);
-    }
-
     createWindow();
+
+    // Register context menu asynchronously in the background after window is shown
+    setTimeout(() => {
+      try {
+        if (!isContextMenuRegistered()) {
+          const currentExe = resolvePermanentExePath();
+          if (fs.existsSync(currentExe)) {
+            registerContextMenu(currentExe);
+          }
+        }
+      } catch (err) {
+        console.error('Context menu auto-registration:', err);
+      }
+    }, 2000);
 
     app.on('activate', () => {
       if (BrowserWindow.getAllWindows().length === 0) createWindow();
