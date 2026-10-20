@@ -1,24 +1,62 @@
 <p align="center">
-  <img src="apps/desktop/resources/icon.png" width="128" height="128" alt="Arkive Logo" />
+  <img src="apps/desktop/public/icon.svg" width="128" height="128" alt="Arkive Origami Prism Logo" />
 </p>
 
 <h1 align="center">Arkive</h1>
 
 <p align="center">
-  <strong>Next-Generation Systems Compression Engine & Modern Archive Manager</strong>
+  <strong>Modern Archive Studio, Radial Compression Engine & Media Transcoder</strong>
 </p>
 
 <p align="center">
-  <a href="https://opensource.org/licenses/MIT"><img src="https://img.shields.io/badge/License-MIT-blue.svg" alt="License: MIT" /></a>
-  <a href="https://www.rust-lang.org/"><img src="https://img.shields.io/badge/Rust-1.70+-orange.svg" alt="Rust" /></a>
-  <a href="https://www.electronjs.org/"><img src="https://img.shields.io/badge/Electron-Desktop-47848F.svg" alt="Electron" /></a>
-  <a href="https://react.dev/"><img src="https://img.shields.io/badge/React-18-61DAFB.svg" alt="React" /></a>
-  <a href="https://www.typescriptlang.org/"><img src="https://img.shields.io/badge/TypeScript-5.6-3178C6.svg" alt="TypeScript" /></a>
+  <a href="https://opensource.org/licenses/MIT"><img src="https://img.shields.io/badge/License-MIT-10b981.svg" alt="License: MIT" /></a>
+  <a href="https://www.rust-lang.org/"><img src="https://img.shields.io/badge/Rust-1.70+-0d9488.svg" alt="Rust" /></a>
+  <a href="https://www.electronjs.org/"><img src="https://img.shields.io/badge/Electron-Desktop-0ea5e9.svg" alt="Electron" /></a>
+  <a href="https://react.dev/"><img src="https://img.shields.io/badge/React-18-38bdf8.svg" alt="React" /></a>
+  <a href="https://www.typescriptlang.org/"><img src="https://img.shields.io/badge/TypeScript-5.6-2563eb.svg" alt="TypeScript" /></a>
 </p>
 
-**Arkive** is an open-source, high-performance archive manager, systems compression engine, and data engineering toolkit designed as a modern alternative to legacy tools like WinRAR and 7-Zip.
+**Arkive** is an open-source, high-performance archive manager, systems compression engine, and video optimization studio built as a clean, modern replacement for legacy utilities like WinRAR and 7-Zip.
 
-Built with a **Rust systems core**, a unified CLI, and a desktop UI powered by **Electron and React**, Arkive delivers multi-threaded compression, automated ZIP corruption repair, and a compression benchmark suite tailored for data engineers.
+Powered by a **multi-threaded Rust core (`arkive-core` + `arkive-cli`)** and a calm **Nordic Jade & Ocean Slate desktop interface**, Arkive combines Finder-style visual folder browsing, a **Right-Click & Hold Radial Zip Format Wheel**, automated ZIP corruption recovery, FFmpeg video compression, and a Pareto-frontier codec benchmark suite.
+
+---
+
+## What's New in the Desktop Studio
+
+### 1. Right-Click & Hold Radial Zip Format Wheel
+Press and hold **Right-Click** on any folder or file (in either **Visual Grid View** or **List View**) to bloom the 360° **Radial Zip Format Wheel** directly under your cursor:
+- **Hold-Drag-Release Gesture:** Drag toward any of the 7 sectors (`.zip`, `.7z`, `.tar.zst`, `.tar.gz`, `.tar.xz`, `ZIP (Zstd)`, or `Custom…`) and release **Right-Click** to immediately pack the folder in place.
+- **Click & Keyboard Mode:** Quick-right-click to keep the wheel pinned open, then click a slice or press keys `1`–`7` (`Esc` to cancel).
+- **Windows Explorer Integration:** Right-clicking any folder in Windows File Explorer (`Add to archive with Arkive...`) opens Arkive in that directory and automatically launches the Radial Zip Format Wheel for that folder.
+
+```mermaid
+sequenceDiagram
+    actor User
+    participant UI as FileBrowser (Grid / List)
+    participant Wheel as RadialZipWheel (SVG 7-Sector Dial)
+    participant IPC as Electron Main Bridge
+    participant Rust as arkive-cli (Rayon Engine)
+
+    User->>UI: Right-Click & Hold on Folder
+    UI->>Wheel: Open at cursor (x, y)
+    User->>Wheel: Drag cursor to sector (e.g. .tar.zst / .7z / .zip)
+    Wheel-->>User: Highlight sector & preview output filename
+    User->>Wheel: Release Right-Click
+    Wheel->>IPC: createArchive({ format, level, method })
+    IPC->>Rust: Spawn parallel compression job
+    Rust-->>IPC: Archive written to disk
+    IPC-->>UI: Auto-refresh folder & select new archive
+```
+
+### 2. Visual Folder Grid View + Semantic List View
+- **Visual Folder Grid (Default):** Displays directories, archives, and media as tactile cards with custom layered Jade/Teal folder glyphs and archive badges.
+- **Semantic List View:** 1-click toggle in the top bar switches to a high-density semantic data table with sticky column and row headers.
+- **Contextual Quick-Compress Bar:** Selecting any folder reveals a bottom bar with 1-click format pills (`ZIP`, `7-Zip`, `TAR.ZST`, `TAR.GZ`, `TAR.XZ`, `ZIP (Zstd)`, `Custom…`).
+
+### 3. Nordic Jade & Ocean Slate Dual Theme
+- **Nordic Slate (Dark Default):** Low-glare cool slate surfaces (`#13181f` / `#181e26`) paired with **Jade-Emerald (`#10b981`)** and **Ocean-Teal (`#0d9488`)** accents.
+- **Nordic Pearl (Light Mode):** 1-click Sun/Moon toggle in the navigation rail switches to a crisp daylight surface (`#f5f7fa` / `#ffffff`) persisted in `localStorage`.
 
 ---
 
@@ -26,17 +64,17 @@ Built with a **Rust systems core**, a unified CLI, and a desktop UI powered by *
 
 ```mermaid
 flowchart TD
-    subgraph UI ["Desktop UI Layer (React 18 + Tailwind CSS + Lucide)"]
-        UI_Browser["Dual-Mode Browser (PC Explorer & Archive View)"]
-        UI_Modals["Operation Modals (Create, Extract, Repair, Info)"]
+    subgraph UI ["Desktop UI Layer (React 18 + Tailwind CSS)"]
+        UI_Grid["Visual Folder Grid & Semantic List View"]
+        UI_Wheel["360° Radial Zip Format Wheel (Hold-Drag-Release)"]
+        UI_Modals["Operation Modals (Create, Extract, Repair, Video, Info)"]
         UI_Bench["Benchmark & Pareto Frontier Dashboard"]
-        UI_DnD["Drag & Drop File & Folder Dispatcher"]
     end
 
     subgraph Host ["Host Platform Layer (Electron Main Process)"]
         Host_IPC["Secure IPC Gateway (contextBridge)"]
         Host_Shell["Windows Explorer Context Menu Manager (HKCU Shell)"]
-        Host_FS["Filesystem Explorer & Quick Places Provider"]
+        Host_FS["Filesystem Explorer & Locations Provider"]
         Host_Lock["Single-Instance Process Coordinator"]
     end
 
@@ -57,6 +95,7 @@ flowchart TD
         FMT_Vid["Video Codecs (H.264 / HEVC / VP9 / AV1)"]
     end
 
+    UI_Grid --> UI_Wheel
     UI --> Host_IPC
     Host_IPC --> Host
     Host --> Host_Lock
@@ -80,10 +119,10 @@ flowchart TD
 
 | Capability | Arkive | WinRAR | 7-Zip | PeaZip |
 |---|:---:|:---:|:---:|:---:|
-| **Modern Desktop UI** | ✅ React + Tailwind | ❌ 1990s Win32 | ❌ 1990s Win32 | ⚠️ Qt/GTK |
+| **Modern Desktop UI** | ✅ Grid + List + Dual Theme | ❌ 1990s Win32 | ❌ 1990s Win32 | ⚠️ Qt/GTK |
+| **Right-Click Hold Radial Format Wheel** | ✅ 7-Sector Instant Dial | ❌ No | ❌ No | ❌ No |
 | **Open Source & Free License** | ✅ MIT | ❌ Proprietary ($39) | ✅ LGPL | ✅ LGPL |
 | **Windows Explorer Right-Click Integration** | ✅ Yes (Native Shell) | ✅ Yes | ✅ Yes | ⚠️ Partial |
-| **PC File Explorer & Quick Places** | ✅ Yes | ✅ Yes | ❌ Basic tree | ⚠️ Partial |
 | **Cross-Format Support** (ZIP, 7z, TAR.*, RAR extract) | ✅ Full | ✅ Full | ✅ Full | ✅ Full |
 | **Parallel ZIP Compression** (Rayon memory chunking) | ✅ Native | ⚠️ Limited | ✅ Multi-threaded | ⚠️ Limited |
 | **Modern Data Codecs** (Zstandard, LZ4) | ✅ Built-in | ❌ No | ❌ (requires plugin) | ⚠️ Partial |
@@ -91,7 +130,6 @@ flowchart TD
 | **Pareto-Optimal Frontier Analysis** | ✅ Built-in | ❌ No | ❌ No | ❌ No |
 | **Damaged ZIP Central Directory Repair** | ✅ Local Header Scan | ⚠️ Basic | ❌ No | ⚠️ Basic |
 | **Video Compression & Transcoding** (Discord <25MB, HEVC, AV1) | ✅ Built-in FFmpeg | ❌ No | ❌ No | ❌ No |
-| **Folder Compression & Drag-and-Drop** | ✅ Yes | ✅ Yes | ✅ Yes | ✅ Yes |
 | **AES-256 WinZip AE-2 / 7z Encryption** | ✅ Yes | ✅ Yes | ✅ Yes | ✅ Yes |
 | **Unified CLI (`arkive`)** | ✅ Built-in | ⚠️ Command prompt | ✅ `7z` | ⚠️ Scriptable |
 
@@ -99,29 +137,14 @@ flowchart TD
 
 ## Data Engineering Highlights
 
-Arkive was engineered specifically with **modern data systems and analytics workloads** in mind:
-
 1. **Storage vs. Compute Trade-Off Profiler:**
-   When architecting columnar storage formats (Parquet, ORC) or table formats (Apache Iceberg, Delta Lake), choosing between **Zstandard**, **LZ4**, and **Deflate** has massive cost implications. Arkive’s benchmark engine automatically identifies **Pareto-optimal** codecs (maximum ratio for minimum compute latency).
+   When architecting columnar storage formats (Parquet, ORC) or table formats (Apache Iceberg, Delta Lake), choosing between **Zstandard**, **LZ4**, and **Deflate** has major cost implications. Arkive’s benchmark engine automatically identifies **Pareto-optimal** codecs (maximum ratio for minimum compute latency).
 2. **Parallel Archive Pipeline:**
    Employs an in-memory batching architecture using **Rayon**: files are compressed concurrently across available CPU cores, then atomically assembled into the final container using zero-recompression raw byte copies.
 3. **Automated Header Reconstruction:**
-   Recovers truncated or corrupt ZIP streams (such as failed object storage downloads) by walking raw byte offsets, sniffing `PK\x03\x04` local file headers, validating CRC-32 checksums, and synthesizing a valid Central Directory and End-of-Central-Directory record.
+   Recovers truncated or corrupt ZIP streams by walking raw byte offsets, sniffing `PK\x03\x04` local file headers, validating CRC-32 checksums, and synthesizing a valid Central Directory and End-of-Central-Directory record.
 4. **Zip-Slip Traversal Protection:**
    Guarantees safe unarchiving by sanitizing relative path traversal sequences (`..`), volume specifiers, and absolute path injection attempts.
-
----
-
-## Download
-
-Grab the latest Windows build from the **[Releases page](https://github.com/Zeinboulo/arkive/releases/latest)**:
-
-- `Arkive-Setup-x.y.z.exe`: installer (Start Menu + Desktop shortcut)
-- `Arkive-Portable-x.y.z.exe`: single-file portable app, no install needed
-
-> Windows SmartScreen may warn because the build is not code-signed. Click *More info → Run anyway*.
-
-To build the installer yourself: `cd apps/desktop && npm install && npm run dist` (output in `apps/desktop/release`).
 
 ---
 
@@ -147,21 +170,15 @@ cargo test
 
 ### Running the Native Desktop App
 
-Arkive includes a standalone desktop application window (no web browser or localhost required):
-
-- **Windows 1-Click Launch:** Simply double-click `Arkive.bat` in the project root!
-- **Or via CLI:**
-  ```bash
-  cd apps/desktop
-  npm run app
-  ```
-This boots Arkive directly in a dedicated native desktop window with native Windows file pickers and direct connection to `arkive.exe`.
+```bash
+cd apps/desktop
+npm install
+npm run start
+```
 
 ---
 
 ## CLI Usage Guide
-
-Arkive provides an intuitive, high-speed command-line interface:
 
 ### 1. Create Archives
 ```bash
@@ -184,52 +201,25 @@ arkive x archive.zip -o ./extracted_data
 arkive x secure_dataset.7z -p "SecretPassword123"
 ```
 
-### 3. List & Inspect
+### 3. List, Verify & Repair
 ```bash
-# Table view
-arkive l dataset.zip
-
-# Structured JSON output (for scripting & ETL pipelines)
+# Structured JSON listing
 arkive l dataset.zip --json
-```
 
-### 4. Integrity Testing
-```bash
-# Verify CRC32 checksum of all entries without writing to disk
+# Verify CRC-32 checksums of all entries
 arkive t data_lake_snapshot.zip
-```
 
-### 5. Repair Damaged ZIP Files
-```bash
-# Rebuild missing central directory
+# Rebuild missing central directory on damaged ZIP
 arkive repair broken_stream.zip -o recovered.zip
 ```
 
-### 6. Compression Benchmarking
+### 4. Benchmark & Video Compression
 ```bash
 # Run benchmark on synthetic CSV event table
 arkive bench --dataset csv --size 32
 
-# Export benchmark matrix to CSV
-arkive bench --dataset json --size 16 --csv bench_report.csv
-```
-
-### 7. Compress & Optimize Videos
-```bash
-# Balanced compression (H.264, universal playback)
-arkive video input.mp4 -o output.mp4 --preset balanced
-
-# Target Discord 25MB file upload limit
+# Target Discord 25MB video upload limit
 arkive video recording.mov --preset discord
-
-# Maximum compression ratio with H.265 / HEVC
-arkive video raw_footage.mkv --preset high
-
-# Downscale to 720p for mobile sharing
-arkive video presentation.mp4 --preset 720p
-
-# Probe video stream metadata without encoding
-arkive video sample.mp4 --probe --json
 ```
 
 ---
@@ -240,21 +230,16 @@ arkive video sample.mp4 --probe --json
 arkive/
 ├── crates/
 │   ├── arkive-core/          # Pure archive engine (ZIP, 7z, TAR, RAR, Codecs, Benchmarks)
-│   │   ├── src/
-│   │   │   ├── archive.rs    # Public format-agnostic facade
-│   │   │   ├── bench.rs      # Benchmark engine & synthetic datasets
-│   │   │   ├── codec.rs      # Raw compression algorithms (Zstd, LZ4, XZ, Deflate, Bz2)
-│   │   │   ├── format.rs     # Magic byte detection & capabilities
-│   │   │   ├── formats/      # Specialized format backends
-│   │   │   ├── repair.rs     # ZIP local header repair & reconstruction
-│   │   │   └── util.rs       # Path sanitization, date decoding, mtime handling
 │   └── arkive-cli/           # Fast CLI binary (clap, indicatif, tabled)
 ├── apps/
 │   └── desktop/              # Electron + React + Vite + Tailwind desktop application
-│       ├── src/              # React UI (Sidebar, FileBrowser, BenchmarkView, Modals)
-│       └── electron/         # Electron host process & native IPC bridge
+│       ├── public/           # Origami Prism SVG/PNG/ICO brand assets
+│       ├── resources/        # Native application icons
+│       ├── src/              # React UI (Sidebar, FileBrowser, RadialZipWheel, Modals)
+│       └── electron/         # Electron host process & Windows Shell integration
 ├── docs/
 │   └── benchmarks.md         # Data engineering algorithm trade-off analysis
+├── ARCHITECTURE.md           # Detailed system & concurrency diagrams
 ├── LICENSE                   # MIT License
 └── README.md
 ```
