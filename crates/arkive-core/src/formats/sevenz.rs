@@ -11,9 +11,12 @@ use sevenz_rust::{
     AesEncoderOptions, Password, SevenZArchiveEntry, SevenZMethodConfiguration, SevenZReader,
     SevenZWriter,
 };
+use std::collections::HashSet;
 use std::fs::File;
 use std::io::{self, BufReader, BufWriter, Read, Write};
-use std::path::Path;
+use std::path::{Path, PathBuf};
+
+const IO_BUF_SIZE: usize = 256 * 1024;
 
 fn map_err(e: sevenz_rust::Error, had_password: bool) -> Error {
     use sevenz_rust::Error as E;
@@ -52,7 +55,11 @@ pub fn create(output: &Path, items: &[InputItem], opts: &CreateOptions, t: &Trac
             w.push_archive_entry::<File>(entry, None)
                 .map_err(|e| map_err(e, false))?;
         } else {
-            let reader = ProgressReader::new(BufReader::new(File::open(&item.abs)?), t, &item.name);
+            let reader = ProgressReader::new(
+                BufReader::with_capacity(IO_BUF_SIZE, File::open(&item.abs)?),
+                t,
+                &item.name,
+            );
             w.push_archive_entry(entry, Some(reader))
                 .map_err(|e| map_err(e, false))?;
         }
@@ -116,6 +123,7 @@ pub fn extract(path: &Path, dest: &Path, opts: &ExtractOptions, t: &Tracker) -> 
         .sum();
     t.set_total(total);
     let mut c = Counts::default();
+    let mut created_dirs: HashSet<PathBuf> = HashSet::new();
 
     for_each(path, pw, |entry, reader| {
         t.check_cancel()?;
@@ -129,7 +137,9 @@ pub fn extract(path: &Path, dest: &Path, opts: &ExtractOptions, t: &Tracker) -> 
             return Ok(());
         };
         if entry.is_directory() {
-            std::fs::create_dir_all(&out)?;
+            if created_dirs.insert(out.clone()) {
+                std::fs::create_dir_all(&out)?;
+            }
             c.dirs += 1;
             return Ok(());
         }
@@ -140,9 +150,12 @@ pub fn extract(path: &Path, dest: &Path, opts: &ExtractOptions, t: &Tracker) -> 
             return Ok(());
         }
         if let Some(parent) = out.parent() {
-            std::fs::create_dir_all(parent)?;
+            if !created_dirs.contains(parent) {
+                std::fs::create_dir_all(parent)?;
+                created_dirs.insert(parent.to_path_buf());
+            }
         }
-        let mut w = BufWriter::new(File::create(&out)?);
+        let mut w = BufWriter::with_capacity(IO_BUF_SIZE, File::create(&out)?);
         c.bytes += copy_with_progress(reader, &mut w, t, &name)?;
         w.flush()?;
         drop(w);

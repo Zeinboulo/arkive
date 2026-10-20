@@ -53,6 +53,9 @@ impl TarWriter {
                 if threads > 1 {
                     enc.multithread(threads as u32)?;
                 }
+                if level >= 6 {
+                    let _ = enc.long_distance_matching(true);
+                }
                 enc.include_checksum(true)?;
                 TarWriter::Zst(enc)
             }
@@ -114,7 +117,8 @@ pub fn create(
             let mut header = tar::Header::new_gnu();
             header.set_metadata(&meta);
             header.set_size(meta.len());
-            let reader = ProgressReader::new(BufReader::new(file), t, &item.name);
+            let reader =
+                ProgressReader::new(BufReader::with_capacity(256 * 1024, file), t, &item.name);
             b.append_data(&mut header, &item.name, reader)
                 .map_err(Error::from_io)?;
         }

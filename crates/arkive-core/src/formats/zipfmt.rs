@@ -12,9 +12,10 @@ use crate::progress::{copy_with_progress, Tracker};
 use crate::util::{fmt_ymdhm, is_selected, normalize_name, safe_join, set_mtime, ymdhms_to_unix};
 use crate::{Error, Result};
 use rayon::prelude::*;
+use std::collections::HashSet;
 use std::fs::File;
 use std::io::{self, BufReader, BufWriter, Cursor, Read, Write};
-use std::path::Path;
+use std::path::{Path, PathBuf};
 use zip::write::{FileOptions, SimpleFileOptions};
 use zip::{AesMode, CompressionMethod, ZipArchive, ZipWriter};
 
@@ -22,10 +23,61 @@ use zip::{AesMode, CompressionMethod, ZipArchive, ZipWriter};
 const PARALLEL_MAX_FILE: u64 = 64 * 1024 * 1024;
 /// Maximum uncompressed bytes buffered per parallel batch.
 const BATCH_BYTES: u64 = 512 * 1024 * 1024;
+/// High-throughput 256 KiB I/O buffer size to minimize Windows NTFS syscall overhead.
+const IO_BUF_SIZE: usize = 256 * 1024;
 
-fn method_and_level(opts: &CreateOptions) -> (CompressionMethod, Option<i64>) {
+/// Returns `true` if the file extension is already compressed (media, archives, webfonts)
+/// where running Deflate/Bzip2/Zstd wastes CPU cycles without meaningful size reduction.
+fn is_precompressed(name: &str) -> bool {
+    let Some((_, ext)) = name.rsplit_once('.') else {
+        return false;
+    };
+    matches!(
+        ext.to_ascii_lowercase().as_str(),
+        "jpg"
+            | "jpeg"
+            | "png"
+            | "webp"
+            | "avif"
+            | "heic"
+            | "gif"
+            | "mp4"
+            | "mkv"
+            | "mov"
+            | "webm"
+            | "avi"
+            | "m4v"
+            | "mp3"
+            | "aac"
+            | "flac"
+            | "ogg"
+            | "opus"
+            | "m4a"
+            | "wma"
+            | "zip"
+            | "7z"
+            | "rar"
+            | "gz"
+            | "tgz"
+            | "bz2"
+            | "tbz2"
+            | "xz"
+            | "txz"
+            | "zst"
+            | "tzst"
+            | "lz4"
+            | "woff"
+            | "woff2"
+            | "apk"
+            | "ipa"
+            | "whl"
+            | "nupkg"
+    )
+}
+
+fn method_and_level(opts: &CreateOptions, item: &InputItem) -> (CompressionMethod, Option<i64>) {
     let l = opts.level.min(9) as i64;
-    if l == 0 {
+    if l == 0 || (!item.is_dir && (item.size < 64 || is_precompressed(&item.name))) {
         return (CompressionMethod::Stored, None);
     }
     match opts.zip_method {
@@ -46,8 +98,12 @@ fn zip_datetime(item: &InputItem) -> zip::DateTime {
         .unwrap_or_default()
 }
 
-fn file_options<'a>(opts: &'a CreateOptions, item: &InputItem) -> FileOptions<'a, ()> {
-    let (method, level) = method_and_level(opts);
+fn file_options_with_method<'a>(
+    opts: &'a CreateOptions,
+    item: &InputItem,
+    method: CompressionMethod,
+    level: Option<i64>,
+) -> FileOptions<'a, ()> {
     let o: FileOptions<'a, ()> = SimpleFileOptions::default()
         .compression_method(method)
         .compression_level(level)
@@ -58,6 +114,11 @@ fn file_options<'a>(opts: &'a CreateOptions, item: &InputItem) -> FileOptions<'a
         Some(pw) => o.with_aes_encryption(AesMode::Aes256, pw),
         None => o,
     }
+}
+
+fn file_options<'a>(opts: &'a CreateOptions, item: &InputItem) -> FileOptions<'a, ()> {
+    let (method, level) = method_and_level(opts, item);
+    file_options_with_method(opts, item, method, level)
 }
 
 pub fn create(output: &Path, items: &[InputItem], opts: &CreateOptions, t: &Tracker) -> Result<()> {
@@ -91,7 +152,7 @@ pub fn create(output: &Path, items: &[InputItem], opts: &CreateOptions, t: &Trac
             zw.add_directory(format!("{}/", item.name), file_options(opts, item))?;
         } else {
             zw.start_file(item.name.as_str(), file_options(opts, item))?;
-            let f = BufReader::new(File::open(&item.abs)?);
+            let f = BufReader::with_capacity(IO_BUF_SIZE, File::open(&item.abs)?);
             copy_with_progress(f, &mut zw, t, &item.name)?;
         }
     }
@@ -126,17 +187,46 @@ fn flush_batch<W: Write + io::Seek>(
 }
 
 /// Compresses one file into a standalone in-memory ZIP (runs on a worker thread).
+/// If an unencrypted file does not shrink after compression, falls back to `Stored`
+/// so no entry ever inflates larger than its uncompressed size.
 fn compress_one(item: &InputItem, opts: &CreateOptions, t: &Tracker) -> Result<Vec<u8>> {
+    let (method, level) = method_and_level(opts, item);
     let cap = (item.size as usize / 2).max(1024);
     let mut w = ZipWriter::new(Cursor::new(Vec::with_capacity(cap)));
-    w.start_file(item.name.as_str(), file_options(opts, item))?;
-    let f = BufReader::new(File::open(&item.abs)?);
+    w.start_file(
+        item.name.as_str(),
+        file_options_with_method(opts, item, method, level),
+    )?;
+    let f = BufReader::with_capacity(IO_BUF_SIZE, File::open(&item.abs)?);
     copy_with_progress(f, &mut w, t, &item.name)?;
-    Ok(w.finish()?.into_inner())
+    let bytes = w.finish()?.into_inner();
+
+    if method != CompressionMethod::Stored && opts.password().is_none() && item.size > 0 {
+        if let Ok(mut single) = ZipArchive::new(Cursor::new(&bytes)) {
+            if let Ok(entry) = single.by_index_raw(0) {
+                if entry.compressed_size() >= item.size {
+                    let mut sw = ZipWriter::new(Cursor::new(Vec::with_capacity(
+                        item.size as usize + 256,
+                    )));
+                    sw.start_file(
+                        item.name.as_str(),
+                        file_options_with_method(opts, item, CompressionMethod::Stored, None),
+                    )?;
+                    let mut rf = BufReader::with_capacity(IO_BUF_SIZE, File::open(&item.abs)?);
+                    io::copy(&mut rf, &mut sw)?;
+                    return Ok(sw.finish()?.into_inner());
+                }
+            }
+        }
+    }
+    Ok(bytes)
 }
 
 fn open(path: &Path) -> Result<ZipArchive<BufReader<File>>> {
-    Ok(ZipArchive::new(BufReader::new(File::open(path)?))?)
+    Ok(ZipArchive::new(BufReader::with_capacity(
+        IO_BUF_SIZE,
+        File::open(path)?,
+    ))?)
 }
 
 fn dt_string(dt: zip::DateTime) -> String {
@@ -204,6 +294,7 @@ pub fn extract(path: &Path, dest: &Path, opts: &ExtractOptions, t: &Tracker) -> 
     t.set_total(total);
 
     let mut c = Counts::default();
+    let mut created_dirs: HashSet<PathBuf> = HashSet::new();
     for i in 0..ar.len() {
         t.check_cancel()?;
         let (name, is_dir, size) = {
@@ -218,7 +309,9 @@ pub fn extract(path: &Path, dest: &Path, opts: &ExtractOptions, t: &Tracker) -> 
             continue;
         };
         if is_dir {
-            std::fs::create_dir_all(&out)?;
+            if created_dirs.insert(out.clone()) {
+                std::fs::create_dir_all(&out)?;
+            }
             c.dirs += 1;
             continue;
         }
@@ -229,9 +322,12 @@ pub fn extract(path: &Path, dest: &Path, opts: &ExtractOptions, t: &Tracker) -> 
         }
         let mut f = open_entry(&mut ar, i, opts.password())?;
         if let Some(parent) = out.parent() {
-            std::fs::create_dir_all(parent)?;
+            if !created_dirs.contains(parent) {
+                std::fs::create_dir_all(parent)?;
+                created_dirs.insert(parent.to_path_buf());
+            }
         }
-        let mut w = BufWriter::new(File::create(&out)?);
+        let mut w = BufWriter::with_capacity(IO_BUF_SIZE, File::create(&out)?);
         c.bytes += copy_with_progress(&mut f, &mut w, t, &name)?;
         w.flush()?;
         drop(w);

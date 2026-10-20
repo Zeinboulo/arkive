@@ -28,8 +28,12 @@ pub struct Tracker<'a> {
     sink: &'a dyn Progress,
     done: AtomicU64,
     total: AtomicU64,
+    last_reported: AtomicU64,
     pub started: Instant,
 }
+
+/// Minimum byte delta between throttled progress emissions (128 KiB).
+const PROGRESS_REPORT_STEP: u64 = 128 * 1024;
 
 impl<'a> Tracker<'a> {
     pub fn new(sink: &'a dyn Progress, total: u64) -> Self {
@@ -37,6 +41,7 @@ impl<'a> Tracker<'a> {
             sink,
             done: AtomicU64::new(0),
             total: AtomicU64::new(total),
+            last_reported: AtomicU64::new(0),
             started: Instant::now(),
         }
     }
@@ -47,8 +52,15 @@ impl<'a> Tracker<'a> {
 
     pub fn add(&self, n: u64, current: &str) {
         let done = self.done.fetch_add(n, Ordering::Relaxed) + n;
-        self.sink
-            .update(done, self.total.load(Ordering::Relaxed), current);
+        let total = self.total.load(Ordering::Relaxed);
+        let last = self.last_reported.load(Ordering::Relaxed);
+        if n == 0
+            || done >= total
+            || done.saturating_sub(last) >= PROGRESS_REPORT_STEP
+        {
+            self.last_reported.store(done, Ordering::Relaxed);
+            self.sink.update(done, total, current);
+        }
     }
 
     pub fn done(&self) -> u64 {
