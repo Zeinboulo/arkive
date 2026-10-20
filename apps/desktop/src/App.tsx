@@ -476,7 +476,7 @@ export const App: React.FC = () => {
   };
 
   return (
-    <div className="flex flex-col h-screen w-screen overflow-hidden bg-slate-900 text-slate-100">
+    <div className="flex h-screen w-screen overflow-hidden bg-slate-900 text-slate-100">
       <Sidebar
         onOpen={handleOpenArchiveDialog}
         onOpenFolder={handleOpenFolderDialog}

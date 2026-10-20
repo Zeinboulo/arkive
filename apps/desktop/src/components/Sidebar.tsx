@@ -10,10 +10,12 @@ import {
   Gauge,
   Video,
   HardDrive,
-  Power,
+  Check,
   Sun,
   Moon,
-  Terminal,
+  Home,
+  Monitor,
+  FileText,
 } from 'lucide-react';
 import { QuickPlace } from '../types';
 import { ArkiveLogo } from './ArkiveLogo';
@@ -40,233 +42,183 @@ interface SidebarProps {
   onToggleTheme: () => void;
 }
 
-interface ToolBtnProps {
-  icon: React.ReactNode;
-  label: string;
-  shortcut?: string;
-  onClick: () => void;
-  disabled?: boolean;
-  active?: boolean;
-  primary?: boolean;
-}
-
-const ToolBtn: React.FC<ToolBtnProps> = ({
-  icon,
-  label,
-  shortcut,
-  onClick,
-  disabled,
-  active,
-  primary,
-}) => (
-  <button
-    type="button"
-    onClick={onClick}
-    disabled={disabled}
-    className={`inline-flex items-center gap-1.5 px-2.5 py-1 text-[11.5px] font-medium border transition-colors shrink-0 ${
-      disabled
-        ? 'cursor-not-allowed border-transparent text-slate-600 opacity-50'
-        : primary
-        ? 'bg-sky-600 hover:bg-sky-500 text-white border-sky-500/80 shadow-sm'
-        : active
-        ? 'bg-slate-800 text-sky-400 border-sky-500/50'
-        : 'bg-slate-850 hover:bg-slate-800 text-slate-200 border-slate-750 hover:border-slate-600'
-    } rounded`}
-  >
-    <span className={primary ? 'text-white' : active ? 'text-sky-400' : 'text-slate-400'}>
-      {icon}
-    </span>
-    <span>{label}</span>
-    {shortcut && (
-      <kbd
-        className={`ml-0.5 px-1 py-0.2 text-[9.5px] font-mono rounded-sm border ${
-          primary
-            ? 'bg-sky-700/70 border-sky-400/40 text-sky-100'
-            : 'bg-slate-900 border-slate-700 text-slate-400'
-        }`}
-      >
-        {shortcut}
-      </kbd>
-    )}
-  </button>
-);
+const getPlaceIcon = (name: string) => {
+  const lower = name.toLowerCase();
+  if (lower.includes('home')) return <Home size={15} />;
+  if (lower.includes('desktop')) return <Monitor size={15} />;
+  if (lower.includes('download')) return <Download size={15} />;
+  if (lower.includes('document')) return <FileText size={15} />;
+  return <HardDrive size={15} />;
+};
 
 export const Sidebar: React.FC<SidebarProps> = (p) => (
-  <header className="flex flex-col shrink-0 border-b border-slate-800 bg-slate-950 select-none">
-    {/* Row 1: Primary Hardware Command Bar */}
-    <div className="flex items-center justify-between gap-2 px-3 h-11 border-b border-slate-850">
-      {/* Left: Brand & View Switcher */}
-      <div className="flex items-center gap-3 shrink-0">
-        <ArkiveLogo size={22} withText />
-
-        <div className="h-4 w-[1px] bg-slate-800" />
-
-        {/* Segmented Workspace Switcher */}
-        <div className="inline-flex rounded border border-slate-800 bg-slate-900 p-0.5">
-          <button
-            type="button"
-            onClick={() => {
-              if (p.benchActive) p.onToggleBench();
-            }}
-            className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 text-[11px] font-mono uppercase tracking-wider rounded-sm transition ${
-              !p.benchActive
-                ? 'bg-slate-800 text-slate-50 font-semibold border border-slate-700'
-                : 'text-slate-400 hover:text-slate-200 border border-transparent'
-            }`}
-          >
-            <Terminal size={12} className={!p.benchActive ? 'text-sky-400' : 'text-slate-500'} />
-            <span>Commander</span>
-          </button>
-          <button
-            type="button"
-            onClick={() => {
-              if (!p.benchActive) p.onToggleBench();
-            }}
-            className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 text-[11px] font-mono uppercase tracking-wider rounded-sm transition ${
-              p.benchActive
-                ? 'bg-slate-800 text-slate-50 font-semibold border border-slate-700'
-                : 'text-slate-400 hover:text-slate-200 border border-transparent'
-            }`}
-          >
-            <Gauge size={12} className={p.benchActive ? 'text-sky-400' : 'text-slate-500'} />
-            <span>Benchmark</span>
-          </button>
-        </div>
-      </div>
-
-      {/* Center: Mechanical Action Toolbar */}
-      <div className="flex items-center gap-1.5 overflow-x-auto py-1">
-        <ToolBtn
-          primary
-          icon={<Plus size={13} strokeWidth={2.5} />}
-          label={p.selectedCount > 0 ? `Pack Selected (${p.selectedCount})` : 'Pack Archive'}
-          shortcut="N"
-          onClick={p.onCreate}
-        />
-        <ToolBtn
-          icon={<Download size={13} />}
-          label="Extract"
-          shortcut="E"
-          onClick={p.onExtract}
-          disabled={!p.hasArchive && p.selectedCount === 0}
-        />
-        <ToolBtn
-          icon={<FolderOpen size={13} />}
-          label="Open Archive"
-          shortcut="O"
-          onClick={p.onOpen}
-        />
-
-        <div className="h-4 w-[1px] bg-slate-800 mx-0.5" />
-
-        <ToolBtn
-          icon={<Video size={13} />}
-          label="Video Studio"
-          onClick={p.onVideo}
-        />
-        <ToolBtn
-          icon={<Wrench size={13} />}
-          label="Repair ZIP"
-          onClick={p.onRepair}
-        />
-
-        {p.hasArchive && (
-          <>
-            <div className="h-4 w-[1px] bg-slate-800 mx-0.5" />
-            <ToolBtn
-              icon={<ShieldCheck size={13} />}
-              label="Verify CRC"
-              onClick={p.onTest}
-            />
-            <ToolBtn
-              icon={<Info size={13} />}
-              label="Header Info"
-              onClick={p.onInfo}
-            />
-          </>
-        )}
-      </div>
-
-      {/* Right: System & Eye-Care Surface Controls */}
-      <div className="flex items-center gap-1.5 shrink-0">
-        <button
-          type="button"
-          onClick={p.onToggleShell}
-          title="Register or unregister Arkive in the Windows Explorer right-click menu"
-          className="inline-flex items-center gap-1.5 px-2 py-1 rounded border border-slate-800 bg-slate-900 hover:border-slate-700 text-[10.5px] font-mono text-slate-300 transition"
-        >
-          <Power size={11} className={p.shellActive ? 'text-emerald-400' : 'text-slate-500'} />
-          <span className="hidden xl:inline text-slate-400">SHELL:</span>
-          <span className={p.shellActive ? 'text-emerald-400 font-bold' : 'text-slate-500'}>
-            {p.shellActive ? 'ON' : 'OFF'}
-          </span>
-        </button>
-
-        <button
-          type="button"
-          onClick={p.onToggleTheme}
-          title={
-            p.theme === 'dusk'
-              ? 'Switch to Archival Paper (Warm Light Mode)'
-              : 'Switch to Anodized Dusk (Warm Matte Dark Mode)'
-          }
-          className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded border border-slate-800 bg-slate-900 hover:border-slate-700 text-[10.5px] font-mono text-slate-200 transition"
-        >
-          {p.theme === 'dusk' ? (
-            <>
-              <Sun size={12} className="text-sky-400" />
-              <span>PAPER</span>
-            </>
-          ) : (
-            <>
-              <Moon size={12} className="text-sky-500" />
-              <span>DUSK</span>
-            </>
-          )}
-        </button>
-      </div>
+  <aside className="flex w-56 shrink-0 flex-col border-r border-slate-800/80 bg-slate-950 px-3 py-4 select-none">
+    {/* Brand Header */}
+    <div className="flex items-center justify-between px-2 pb-4">
+      <ArkiveLogo size={30} withText />
+      <button
+        type="button"
+        onClick={p.onToggleTheme}
+        title={p.theme === 'dusk' ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
+        className="flex h-7 w-7 items-center justify-center rounded-md text-slate-400 hover:bg-slate-850 hover:text-slate-100 transition"
+      >
+        {p.theme === 'dusk' ? <Sun size={15} /> : <Moon size={15} />}
+      </button>
     </div>
 
-    {/* Row 2: Quick Mounts / Drives Strip */}
-    {!p.benchActive && (
-      <div className="flex items-center justify-between gap-2 px-3 h-8 bg-slate-900/90 text-[11px]">
-        <div className="flex items-center gap-1 overflow-x-auto">
-          <span className="text-[10px] font-mono uppercase tracking-wider text-slate-500 mr-1">
-            MOUNTS //
-          </span>
+    {/* Primary Action */}
+    <div className="px-1 pb-4">
+      <button
+        type="button"
+        onClick={p.onCreate}
+        className="flex w-full items-center justify-center gap-2 rounded-lg bg-sky-600 hover:bg-sky-500 px-3 py-2 text-[13px] font-medium text-white shadow-sm transition"
+      >
+        <Plus size={16} strokeWidth={2.2} />
+        <span>{p.selectedCount > 0 ? `Compress (${p.selectedCount})` : 'New Archive'}</span>
+      </button>
+    </div>
+
+    {/* Navigation List */}
+    <nav className="flex-1 overflow-y-auto space-y-5 px-1">
+      {/* Locations */}
+      <div>
+        <div className="px-2 pb-1.5 text-[11px] font-medium text-slate-500">
+          Locations
+        </div>
+        <div className="space-y-0.5">
           {p.places.map((pl) => {
-            const isActive = p.currentPath.toLowerCase() === pl.path.toLowerCase();
+            const active =
+              !p.benchActive && p.currentPath.toLowerCase() === pl.path.toLowerCase();
             return (
               <button
                 key={pl.path}
                 type="button"
                 onClick={() => p.onNavigate(pl.path)}
-                className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-sm font-mono text-[11px] transition border ${
-                  isActive
-                    ? 'bg-slate-800 text-sky-400 border-slate-700 font-semibold'
-                    : 'text-slate-400 hover:text-slate-100 hover:bg-slate-850 border-transparent'
+                className={`flex w-full items-center gap-2.5 rounded-md px-2.5 py-1.5 text-[13px] transition ${
+                  active
+                    ? 'bg-sky-500/15 text-sky-400 font-medium'
+                    : 'text-slate-300 hover:bg-slate-850 hover:text-slate-100'
                 }`}
               >
-                <HardDrive size={11} className={isActive ? 'text-sky-400' : 'text-slate-500'} />
-                <span>{pl.name}</span>
+                <span className={active ? 'text-sky-400' : 'text-slate-400'}>
+                  {getPlaceIcon(pl.name)}
+                </span>
+                <span className="truncate">{pl.name}</span>
               </button>
             );
           })}
           <button
             type="button"
             onClick={p.onOpenFolder}
-            className="inline-flex items-center gap-1 px-2 py-0.5 rounded-sm font-mono text-[11px] text-slate-400 hover:text-sky-400 hover:bg-slate-850 transition"
+            className="flex w-full items-center gap-2.5 rounded-md px-2.5 py-1.5 text-[13px] text-slate-400 hover:bg-slate-850 hover:text-slate-100 transition"
           >
-            <Folder size={11} />
-            <span>Browse…</span>
+            <Folder size={15} />
+            <span>Choose Folder…</span>
           </button>
         </div>
+      </div>
 
-        <div className="hidden md:flex items-center gap-2 text-[10.5px] font-mono text-slate-400 shrink-0">
-          <span className="inline-block w-1.5 h-1.5 rounded-full bg-sky-400" />
-          <span>HOLD RIGHT-CLICK ON ANY FOLDER FOR RADIAL FORMAT WHEEL</span>
+      {/* Archives & Tools */}
+      <div>
+        <div className="px-2 pb-1.5 text-[11px] font-medium text-slate-500">
+          Tools
+        </div>
+        <div className="space-y-0.5">
+          <button
+            type="button"
+            onClick={p.onOpen}
+            className="flex w-full items-center gap-2.5 rounded-md px-2.5 py-1.5 text-[13px] text-slate-300 hover:bg-slate-850 hover:text-slate-100 transition"
+          >
+            <FolderOpen size={15} className="text-slate-400" />
+            <span>Open Archive…</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={p.onExtract}
+            disabled={!p.hasArchive && p.selectedCount === 0}
+            className={`flex w-full items-center gap-2.5 rounded-md px-2.5 py-1.5 text-[13px] transition ${
+              !p.hasArchive && p.selectedCount === 0
+                ? 'text-slate-600 cursor-not-allowed'
+                : 'text-slate-300 hover:bg-slate-850 hover:text-slate-100'
+            }`}
+          >
+            <Download size={15} className="text-slate-400" />
+            <span>Extract Files…</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={p.onVideo}
+            className="flex w-full items-center gap-2.5 rounded-md px-2.5 py-1.5 text-[13px] text-slate-300 hover:bg-slate-850 hover:text-slate-100 transition"
+          >
+            <Video size={15} className="text-slate-400" />
+            <span>Compress Video</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={p.onRepair}
+            className="flex w-full items-center gap-2.5 rounded-md px-2.5 py-1.5 text-[13px] text-slate-300 hover:bg-slate-850 hover:text-slate-100 transition"
+          >
+            <Wrench size={15} className="text-slate-400" />
+            <span>Repair Archive</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={p.onToggleBench}
+            className={`flex w-full items-center gap-2.5 rounded-md px-2.5 py-1.5 text-[13px] transition ${
+              p.benchActive
+                ? 'bg-sky-500/15 text-sky-400 font-medium'
+                : 'text-slate-300 hover:bg-slate-850 hover:text-slate-100'
+            }`}
+          >
+            <Gauge size={15} className={p.benchActive ? 'text-sky-400' : 'text-slate-400'} />
+            <span>Speed Benchmark</span>
+          </button>
+
+          {p.hasArchive && (
+            <>
+              <button
+                type="button"
+                onClick={p.onTest}
+                className="flex w-full items-center gap-2.5 rounded-md px-2.5 py-1.5 text-[13px] text-slate-300 hover:bg-slate-850 hover:text-slate-100 transition"
+              >
+                <ShieldCheck size={15} className="text-sky-400" />
+                <span>Verify Integrity</span>
+              </button>
+              <button
+                type="button"
+                onClick={p.onInfo}
+                className="flex w-full items-center gap-2.5 rounded-md px-2.5 py-1.5 text-[13px] text-slate-300 hover:bg-slate-850 hover:text-slate-100 transition"
+              >
+                <Info size={15} className="text-sky-400" />
+                <span>Archive Details</span>
+              </button>
+            </>
+          )}
         </div>
       </div>
-    )}
-  </header>
+    </nav>
+
+    {/* Quiet Footer */}
+    <div className="pt-3 border-t border-slate-800/70 px-1">
+      <button
+        type="button"
+        onClick={p.onToggleShell}
+        className="flex w-full items-center justify-between rounded-md px-2.5 py-1.5 text-xs text-slate-400 hover:bg-slate-850 hover:text-slate-200 transition"
+      >
+        <span>Explorer Context Menu</span>
+        <span
+          className={`inline-flex items-center gap-1 text-[11px] font-medium ${
+            p.shellActive ? 'text-sky-400' : 'text-slate-500'
+          }`}
+        >
+          {p.shellActive && <Check size={12} />}
+          <span>{p.shellActive ? 'Active' : 'Off'}</span>
+        </span>
+      </button>
+    </div>
+  </aside>
 );

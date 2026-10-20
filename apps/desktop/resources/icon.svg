@@ -1,179 +1,45 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+<svg viewBox="0 0 512 512" width="512" height="512" xmlns="http://www.w3.org/2000/svg">
   <defs>
-    <!-- Background Canvas Tile -->
-    <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#181615" />
-      <stop offset="50%" stop-color="#100f0e" />
-      <stop offset="100%" stop-color="#080706" />
+    <linearGradient id="ark-bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#131b2e" />
+      <stop offset="55%" stop-color="#0d1322" />
+      <stop offset="100%" stop-color="#090d18" />
     </linearGradient>
-
-    <!-- Outer Rim Stroke -->
-    <linearGradient id="rimGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#ff7a3d" stop-opacity="0.85" />
-      <stop offset="25%" stop-color="#443e3a" stop-opacity="0.4" />
-      <stop offset="75%" stop-color="#211e1b" stop-opacity="0.6" />
-      <stop offset="100%" stop-color="#ff5500" stop-opacity="0.5" />
+    <linearGradient id="ark-border" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#34d399" stop-opacity="0.45" />
+      <stop offset="50%" stop-color="#38bdf8" stop-opacity="0.2" />
+      <stop offset="100%" stop-color="#0f172a" stop-opacity="0.6" />
     </linearGradient>
-
-    <!-- Core Ambient Backlight Glow -->
-    <radialGradient id="emberGlow" cx="50%" cy="50%" r="52%">
-      <stop offset="0%" stop-color="#ff6a20" stop-opacity="0.32" />
-      <stop offset="45%" stop-color="#ff4400" stop-opacity="0.10" />
-      <stop offset="100%" stop-color="#ff4400" stop-opacity="0" />
-    </radialGradient>
-
-    <!-- Left Pillar: Polished Obsidian Titanium -->
-    <linearGradient id="leftPillar" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#2c2825" />
-      <stop offset="40%" stop-color="#1e1a17" />
-      <stop offset="100%" stop-color="#13110f" />
+    <linearGradient id="ark-left" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#6ee7b7" />
+      <stop offset="45%" stop-color="#10b981" />
+      <stop offset="100%" stop-color="#047857" />
     </linearGradient>
-
-    <!-- Left Outer Rim Glow Stroke -->
-    <linearGradient id="leftRim" x1="0%" y1="0%" x2="0%" y2="100%">
-      <stop offset="0%" stop-color="#ff9955" />
-      <stop offset="50%" stop-color="#ff6611" />
-      <stop offset="100%" stop-color="#662200" />
+    <linearGradient id="ark-right" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#5eead4" />
+      <stop offset="50%" stop-color="#14b8a6" />
+      <stop offset="100%" stop-color="#0284c7" />
     </linearGradient>
-
-    <!-- Right Pillar: Radiant Blazing Ember Flame -->
-    <linearGradient id="rightPillar" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#ffba66" />
-      <stop offset="30%" stop-color="#ff7a29" />
-      <stop offset="75%" stop-color="#ea4405" />
-      <stop offset="100%" stop-color="#ba2b00" />
+    <linearGradient id="ark-base" x1="0%" y1="50%" x2="100%" y2="50%">
+      <stop offset="0%" stop-color="#059669" />
+      <stop offset="45%" stop-color="#0ea5e9" />
+      <stop offset="100%" stop-color="#2563eb" />
     </linearGradient>
-
-    <!-- Crossbar Compression Vise: White-Hot / Molten Gold -->
-    <linearGradient id="crossbarGrad" x1="0%" y1="0%" x2="100%" y2="0%">
-      <stop offset="0%" stop-color="#ff8c3a" />
-      <stop offset="30%" stop-color="#ffd5aa" />
-      <stop offset="50%" stop-color="#ffffff" />
-      <stop offset="70%" stop-color="#ffd5aa" />
-      <stop offset="100%" stop-color="#ff8c3a" />
-    </linearGradient>
-
-    <!-- Inner Diamond Core -->
-    <linearGradient id="diamondGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+    <linearGradient id="ark-core" x1="0%" y1="0%" x2="0%" y2="100%">
       <stop offset="0%" stop-color="#ffffff" />
-      <stop offset="40%" stop-color="#ffe0b2" />
-      <stop offset="100%" stop-color="#ff6600" />
+      <stop offset="100%" stop-color="#a7f3d0" />
     </linearGradient>
-
-    <!-- Diamond Ambient Glow -->
-    <radialGradient id="diamondGlow" cx="50%" cy="50%" r="50%">
-      <stop offset="0%" stop-color="#ff9944" stop-opacity="0.8" />
-      <stop offset="100%" stop-color="#ff6600" stop-opacity="0" />
-    </radialGradient>
-
-    <!-- Drop Shadow Filter -->
-    <filter id="shadow3d" x="-20%" y="-20%" width="140%" height="140%">
-      <feDropShadow dx="0" dy="18" stdDeviation="22" flood-color="#000000" flood-opacity="0.85" />
-      <feDropShadow dx="0" dy="4" stdDeviation="10" flood-color="#ff5500" flood-opacity="0.35" />
-    </filter>
   </defs>
 
-  <!-- Container Squircle Tile -->
-  <rect width="512" height="512" rx="116" fill="url(#bgGrad)" />
-  <rect x="2" y="2" width="508" height="508" rx="114" fill="none" stroke="url(#rimGrad)" stroke-width="3" />
+  <rect width="512" height="512" rx="120" fill="url(#ark-bg)" />
+  <rect x="4" y="4" width="504" height="504" rx="116" fill="none" stroke="url(#ark-border)" stroke-width="6" />
 
-  <!-- Ambient Glow Behind Monogram -->
-  <circle cx="256" cy="265" r="215" fill="url(#emberGlow)" />
-
-  <!-- Precision Technical Reticle Grid -->
-  <g opacity="0.05" stroke="#ffffff" stroke-width="1.5">
-    <circle cx="256" cy="256" r="168" fill="none" stroke-dasharray="6 6" />
-    <line x1="88" y1="256" x2="424" y2="256" />
-    <line x1="256" y1="88" x2="256" y2="424" />
+  <g>
+    <path d="M 256 84 L 108 344 L 176 384 L 256 224 Z" fill="url(#ark-left)" />
+    <path d="M 256 84 L 404 344 L 336 384 L 256 224 Z" fill="url(#ark-right)" />
+    <path d="M 108 344 L 256 428 L 404 344 L 336 304 L 256 350 L 176 304 Z" fill="url(#ark-base)" />
+    <polygon points="256,216 310,248 256,280 202,248" fill="url(#ark-core)" />
+    <polygon points="202,248 256,280 256,336 202,304" fill="#10b981" opacity="0.9" />
+    <polygon points="310,248 256,280 256,336 310,304" fill="#0ea5e9" opacity="0.9" />
   </g>
-
-  <!-- THE ARKIVE MONOGRAM "A" -->
-  <g filter="url(#shadow3d)">
-
-    <!-- LEFT ARM & APEX HALF (Obsidian with interlocking zipper teeth) -->
-    <path d="M 256 72 
-             L 256 100
-             L 272 100 L 272 122 L 256 122
-             L 256 142
-             L 272 142 L 272 164 L 256 164
-             L 256 182
-             L 218 274
-             L 256 274
-             L 256 324
-             L 194 324
-             L 148 432
-             L 94 432
-             C 86 432 81 423 85 416
-             L 243 79
-             C 246 74 251 72 256 72 Z"
-          fill="url(#leftPillar)"
-          stroke="url(#leftRim)"
-          stroke-width="2.5" />
-
-    <!-- RIGHT ARM & APEX HALF (Radiant Ember Flame with interlocking teeth) -->
-    <path d="M 256 72 
-             L 256 80
-             L 240 80 L 240 102 L 256 102
-             L 256 124
-             L 240 124 L 240 146 L 256 146
-             L 256 166
-             L 240 166 L 240 182 L 256 182
-             L 294 274
-             L 256 274
-             L 256 324
-             L 318 324
-             L 364 432
-             L 418 432
-             C 426 432 431 423 427 416
-             L 269 79
-             C 266 74 261 72 256 72 Z"
-          fill="url(#rightPillar)" />
-
-    <!-- INNER APEX COUNTER (The Authentic Triangular Hole of the "A") -->
-    <!-- Positioned cleanly between y=182 and y=274 -->
-    <path d="M 256 182 L 294 274 L 218 274 Z" fill="#0d0c0b" />
-
-    <!-- FLOATING ARCHIVE VAULT CORE (The Glowing Diamond in the Counter) -->
-    <g transform="translate(256, 236)">
-      <!-- Soft ambient core halo -->
-      <circle cx="0" cy="0" r="28" fill="url(#diamondGlow)" />
-      <polygon points="0,-16 13,0 0,16 -13,0" fill="url(#diamondGrad)" />
-      <polygon points="0,-10 8,0 0,10 -8,0" fill="#ffffff" />
-    </g>
-
-    <!-- PERFECTLY FLUSH INTEGRATED HYDRAULIC COMPRESSION CROSSBAR -->
-    <!-- Exactly conforms to inner leg angle from (218, 274) to (194, 324) and (294, 274) to (318, 324) -->
-    <g>
-      <!-- Base Flush Crossbar Trapazoid -->
-      <polygon points="218,274 294,274 318,324 194,324" fill="url(#crossbarGrad)" />
-
-      <!-- High-tech precision grooves / compression teeth carved into the crossbar -->
-      <g fill="#14110f">
-        <!-- Left vice teeth -->
-        <polygon points="214,284 228,284 224,314 200,314" />
-        <polygon points="234,284 246,284 243,314 231,314" />
-
-        <!-- Center Key / Lock Channel -->
-        <rect x="251" y="278" width="10" height="42" rx="2" fill="#14110f" />
-
-        <!-- Right vice teeth -->
-        <polygon points="266,284 278,284 281,314 269,314" />
-        <polygon points="284,284 298,284 312,314 288,314" />
-      </g>
-
-      <!-- Center White-Hot Core Spark on Crossbar -->
-      <circle cx="256" cy="299" r="3.5" fill="#ffffff" />
-      <polygon points="256,288 260,299 256,310 252,299" fill="#ff7a3d" opacity="0.8" />
-    </g>
-
-    <!-- TOP APEX CAP HIGHLIGHT (White-Hot Chamfer) -->
-    <polygon points="256,72 268,90 244,90" fill="#ffffff" opacity="0.95" />
-
-    <!-- BASE FEET CHAMFERS (Grounding Pads) -->
-    <polygon points="94,432 148,432 142,422 102,422" fill="#ff7a3d" opacity="0.5" />
-    <polygon points="418,432 364,432 370,422 410,422" fill="#ffaa55" opacity="0.7" />
-  </g>
-
-  <!-- Specular Curve Rim Highlight Along Top of Squircle -->
-  <path d="M 96 3 A 116 116 0 0 1 416 3" fill="none" stroke="#ffffff" stroke-width="2" opacity="0.22" />
 </svg>

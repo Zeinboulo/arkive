@@ -8,13 +8,13 @@ interface ArkiveLogoProps {
 }
 
 export const ArkiveLogo: React.FC<ArkiveLogoProps> = ({
-  size = 24,
+  size = 28,
   className = '',
   withText = false,
   variant = 'tile',
 }) => {
   return (
-    <div className={`inline-flex items-center gap-2 ${className}`}>
+    <div className={`inline-flex items-center gap-2.5 ${className}`}>
       <svg
         viewBox="0 0 512 512"
         width={size}
@@ -23,130 +23,106 @@ export const ArkiveLogo: React.FC<ArkiveLogoProps> = ({
         xmlns="http://www.w3.org/2000/svg"
       >
         <defs>
-          <linearGradient id="arkive-bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-            <stop offset="0%" stopColor="#181615" />
-            <stop offset="50%" stopColor="#100f0e" />
-            <stop offset="100%" stopColor="#080706" />
+          {/* App Icon Squircle Background */}
+          <linearGradient id="ark-bg" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stopColor="#131b2e" />
+            <stop offset="55%" stopColor="#0d1322" />
+            <stop offset="100%" stopColor="#090d18" />
           </linearGradient>
 
-          <linearGradient id="arkive-rimGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-            <stop offset="0%" stopColor="#ff7a3d" stopOpacity="0.85" />
-            <stop offset="25%" stopColor="#443e3a" stopOpacity="0.4" />
-            <stop offset="75%" stopColor="#211e1b" stopOpacity="0.6" />
-            <stop offset="100%" stopColor="#ff5500" stopOpacity="0.5" />
+          {/* Subtle Inner Border */}
+          <linearGradient id="ark-border" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stopColor="#34d399" stopOpacity="0.45" />
+            <stop offset="50%" stopColor="#38bdf8" stopOpacity="0.2" />
+            <stop offset="100%" stopColor="#0f172a" stopOpacity="0.6" />
           </linearGradient>
 
-          <radialGradient id="arkive-emberGlow" cx="50%" cy="50%" r="52%">
-            <stop offset="0%" stopColor="#ff6a20" stopOpacity="0.35" />
-            <stop offset="45%" stopColor="#ff4400" stopOpacity="0.12" />
-            <stop offset="100%" stopColor="#ff4400" stopOpacity="0" />
-          </radialGradient>
-
-          <linearGradient id="arkive-leftPillar" x1="0%" y1="0%" x2="100%" y2="100%">
-            <stop offset="0%" stopColor="#2c2825" />
-            <stop offset="40%" stopColor="#1d1a17" />
-            <stop offset="100%" stopColor="#13110f" />
+          {/* Left Origami Ribbon — Mint to Emerald Jade */}
+          <linearGradient id="ark-left" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stopColor="#6ee7b7" />
+            <stop offset="45%" stopColor="#10b981" />
+            <stop offset="100%" stopColor="#047857" />
           </linearGradient>
 
-          <linearGradient id="arkive-leftRim" x1="0%" y1="0%" x2="0%" y2="100%">
-            <stop offset="0%" stopColor="#ff9955" />
-            <stop offset="50%" stopColor="#ff6611" />
-            <stop offset="100%" stopColor="#662200" />
+          {/* Right Origami Ribbon — Aqua Teal to Sky */}
+          <linearGradient id="ark-right" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stopColor="#5eead4" />
+            <stop offset="50%" stopColor="#14b8a6" />
+            <stop offset="100%" stopColor="#0284c7" />
           </linearGradient>
 
-          <linearGradient id="arkive-rightPillar" x1="0%" y1="0%" x2="100%" y2="100%">
-            <stop offset="0%" stopColor="#ffba66" />
-            <stop offset="30%" stopColor="#ff7a29" />
-            <stop offset="75%" stopColor="#ea4405" />
-            <stop offset="100%" stopColor="#ba2b00" />
+          {/* Bottom Interlocking Fold — Sky to Deep Indigo-Blue */}
+          <linearGradient id="ark-base" x1="0%" y1="50%" x2="100%" y2="50%">
+            <stop offset="0%" stopColor="#059669" />
+            <stop offset="45%" stopColor="#0ea5e9" />
+            <stop offset="100%" stopColor="#2563eb" />
           </linearGradient>
 
-          <linearGradient id="arkive-crossbarGrad" x1="0%" y1="0%" x2="100%" y2="0%">
-            <stop offset="0%" stopColor="#ff8c3a" />
-            <stop offset="30%" stopColor="#ffd5aa" />
-            <stop offset="50%" stopColor="#ffffff" />
-            <stop offset="70%" stopColor="#ffd5aa" />
-            <stop offset="100%" stopColor="#ff8c3a" />
-          </linearGradient>
-
-          <linearGradient id="arkive-diamondGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+          {/* Center Core Prism */}
+          <linearGradient id="ark-core" x1="0%" y1="0%" x2="0%" y2="100%">
             <stop offset="0%" stopColor="#ffffff" />
-            <stop offset="40%" stopColor="#ffe0b2" />
-            <stop offset="100%" stopColor="#ff6600" />
+            <stop offset="100%" stopColor="#a7f3d0" />
           </linearGradient>
-
-          <radialGradient id="arkive-diamondGlow" cx="50%" cy="50%" r="50%">
-            <stop offset="0%" stopColor="#ff9944" stopOpacity="0.8" />
-            <stop offset="100%" stopColor="#ff6600" stopOpacity="0" />
-          </radialGradient>
         </defs>
 
         {variant === 'tile' && (
           <>
-            <rect width="512" height="512" rx="96" fill="url(#arkive-bgGrad)" />
+            <rect width="512" height="512" rx="120" fill="url(#ark-bg)" />
             <rect
-              x="2"
-              y="2"
-              width="508"
-              height="508"
-              rx="94"
+              x="4"
+              y="4"
+              width="504"
+              height="504"
+              rx="116"
               fill="none"
-              stroke="url(#arkive-rimGrad)"
-              strokeWidth="4"
+              stroke="url(#ark-border)"
+              strokeWidth="6"
             />
-            <circle cx="256" cy="265" r="215" fill="url(#arkive-emberGlow)" />
           </>
         )}
 
+        {/* Isometric Folded Origami Prism 'A' + Cube */}
         <g>
+          {/* Left Folded Facet */}
           <path
-            d="M 256 72 L 256 100 L 272 100 L 272 122 L 256 122 L 256 142 L 272 142 L 272 164 L 256 164 L 256 182 L 218 274 L 256 274 L 256 324 L 194 324 L 148 432 L 94 432 C 86 432 81 423 85 416 L 243 79 C 246 74 251 72 256 72 Z"
-            fill="url(#arkive-leftPillar)"
-            stroke="url(#arkive-leftRim)"
-            strokeWidth="2.5"
+            d="M 256 84 L 108 344 L 176 384 L 256 224 Z"
+            fill="url(#ark-left)"
           />
 
+          {/* Right Folded Facet */}
           <path
-            d="M 256 72 L 256 80 L 240 80 L 240 102 L 256 102 L 256 124 L 240 124 L 240 146 L 256 146 L 256 166 L 240 166 L 240 182 L 256 182 L 294 274 L 256 274 L 256 324 L 318 324 L 364 432 L 418 432 C 426 432 431 423 427 416 L 269 79 C 266 74 261 72 256 72 Z"
-            fill="url(#arkive-rightPillar)"
+            d="M 256 84 L 404 344 L 336 384 L 256 224 Z"
+            fill="url(#ark-right)"
           />
 
-          <path d="M 256 182 L 294 274 L 218 274 Z" fill="#0d0c0b" />
+          {/* Bottom Interlocking Compression Ribbon */}
+          <path
+            d="M 108 344 L 256 428 L 404 344 L 336 304 L 256 350 L 176 304 Z"
+            fill="url(#ark-base)"
+          />
 
-          <g transform="translate(256, 236)">
-            <circle cx="0" cy="0" r="28" fill="url(#arkive-diamondGlow)" />
-            <polygon points="0,-16 13,0 0,16 -13,0" fill="url(#arkive-diamondGrad)" />
-            <polygon points="0,-10 8,0 0,10 -8,0" fill="#ffffff" />
-          </g>
-
-          <g>
-            <polygon points="218,274 294,274 318,324 194,324" fill="url(#arkive-crossbarGrad)" />
-
-            <g fill="#14110f">
-              <polygon points="214,284 228,284 224,314 200,314" />
-              <polygon points="234,284 246,284 243,314 231,314" />
-              <rect x="251" y="278" width="10" height="42" rx="2" />
-              <polygon points="266,284 278,284 281,314 269,314" />
-              <polygon points="284,284 298,284 312,314 288,314" />
-            </g>
-
-            <circle cx="256" cy="299" r="3.5" fill="#ffffff" />
-            <polygon points="256,288 260,299 256,310 252,299" fill="#ff7a3d" opacity="0.8" />
-          </g>
-
-          <polygon points="256,72 268,90 244,90" fill="#ffffff" opacity="0.95" />
-          <polygon points="94,432 148,432 142,422 102,422" fill="#ff7a3d" opacity="0.5" />
-          <polygon points="418,432 364,432 370,422 410,422" fill="#ffaa55" opacity="0.7" />
+          {/* Floating Inner Cube Core */}
+          <polygon
+            points="256,216 310,248 256,280 202,248"
+            fill="url(#ark-core)"
+          />
+          <polygon
+            points="202,248 256,280 256,336 202,304"
+            fill="#10b981"
+            opacity="0.9"
+          />
+          <polygon
+            points="310,248 256,280 256,336 310,304"
+            fill="#0ea5e9"
+            opacity="0.9"
+          />
         </g>
       </svg>
 
       {withText && (
-        <div className="flex items-baseline gap-1.5 leading-none select-none">
-          <span className="text-[13px] font-bold tracking-[0.08em] text-slate-50 font-mono uppercase">
-            ARKIVE
-          </span>
-          <span className="text-[10px] font-mono text-slate-500">
-            0.1
+        <div className="flex flex-col leading-none select-none">
+          <span className="text-[15px] font-semibold tracking-tight text-slate-50">
+            Arkive
           </span>
         </div>
       )}

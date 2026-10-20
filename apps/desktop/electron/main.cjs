@@ -124,9 +124,9 @@ function createWindow() {
     height: 750,
     minWidth: 850,
     minHeight: 550,
-    title: 'ARKIVE // High-Performance Archive Commander',
+    title: 'Arkive',
     icon: appIconPath,
-    backgroundColor: '#171614',
+    backgroundColor: '#13181f',
     show: false,
     autoHideMenuBar: true,
     webPreferences: {

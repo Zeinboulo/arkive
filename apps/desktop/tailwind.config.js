@@ -1,36 +1,37 @@
 /**
- * Arkive Hardware-Grade Theme Configuration
- * Warm Graphite ("Anodized Dusk") & Unbleached Stone ("Archival Paper")
- * with tactile Copper-Amber & Sage accents — zero neon/purple SaaS clichés.
+ * Arkive — Nordic Jade & Ocean Slate Palette
+ * Zero orange, zero purple/violet gradients.
+ * Uses calm Jade-Emerald (#10b981) and Ocean-Teal (#0d9488) accents
+ * on soft Nordic Slate surfaces.
  */
 const withAlpha = (varName) => `rgb(var(${varName}) / <alpha-value>)`;
 
-const accentPalette = {
-  50: '#fdf7f2',
-  100: '#faeadc',
-  200: '#f3d1b5',
-  300: '#eab285',
-  400: '#df8e53',
-  500: '#d47432',
-  600: '#bd5d22',
-  700: '#9c491d',
-  800: '#7e3c1d',
-  900: '#67331a',
-  950: '#38180b',
+const jadeTeal = {
+  50: '#ecfdf5',
+  100: '#d1fae5',
+  200: '#a7f3d0',
+  300: '#6ee7b7',
+  400: '#34d399',
+  500: '#10b981',
+  600: '#059669',
+  700: '#047857',
+  800: '#065f46',
+  900: '#064e3b',
+  950: '#022c22',
 };
 
-const sagePalette = {
-  50: '#f2fbf9',
-  100: '#d5f4ec',
-  200: '#ace8da',
-  300: '#7ad5c2',
-  400: '#4ebaa5',
-  500: '#359e8b',
-  600: '#287f70',
-  700: '#23665b',
-  800: '#20524a',
-  900: '#1e443e',
-  950: '#0c2724',
+const oceanSlate = {
+  50: '#f0f9ff',
+  100: '#e0f2fe',
+  200: '#bae6fd',
+  300: '#7dd3fc',
+  400: '#38bdf8',
+  500: '#0ea5e9',
+  600: '#0284c7',
+  700: '#0369a1',
+  800: '#075985',
+  900: '#0c4a6e',
+  950: '#082f49',
 };
 
 /** @type {import('tailwindcss').Config} */
@@ -39,18 +40,18 @@ export default {
   theme: {
     borderRadius: {
       none: '0',
-      sm: '2px',
-      DEFAULT: '4px',
-      md: '5px',
-      lg: '6px',
-      xl: '8px',
-      '2xl': '10px',
+      sm: '4px',
+      DEFAULT: '6px',
+      md: '8px',
+      lg: '10px',
+      xl: '12px',
+      '2xl': '16px',
       full: '9999px',
     },
     extend: {
       fontFamily: {
-        sans: ['"Segoe UI Variable Text"', '"Segoe UI"', 'Inter', 'system-ui', 'sans-serif'],
-        mono: ['"Cascadia Mono"', 'Consolas', 'ui-monospace', 'monospace'],
+        sans: ['"Segoe UI Variable Display"', '"Segoe UI Variable Text"', '"Segoe UI"', 'Inter', 'system-ui', 'sans-serif'],
+        mono: ['"Cascadia Code"', '"Cascadia Mono"', 'Consolas', 'ui-monospace', 'monospace'],
       },
       colors: {
         slate: {
@@ -68,11 +69,12 @@ export default {
           900: withAlpha('--c-slate-900'),
           950: withAlpha('--c-slate-950'),
         },
-        sky: accentPalette,
-        indigo: accentPalette,
-        violet: accentPalette,
-        purple: accentPalette,
-        emerald: sagePalette,
+        sky: jadeTeal,
+        emerald: jadeTeal,
+        indigo: oceanSlate,
+        violet: oceanSlate,
+        purple: oceanSlate,
+        amber: oceanSlate,
       },
     },
   },
