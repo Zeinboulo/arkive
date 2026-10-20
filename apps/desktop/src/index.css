@@ -5,49 +5,52 @@
 :root {
   color-scheme: dark;
 
-  /* Soft Dusk (Low-glare Nordic Slate — easy on the eyes) */
-  --c-slate-50: 240 244 248;
-  --c-slate-100: 226 232 240;
-  --c-slate-200: 205 214 226;
-  --c-slate-300: 174 186 201;
-  --c-slate-400: 139 152 169;
-  --c-slate-500: 107 120 138;
-  --c-slate-600: 78 90 106;
-  --c-slate-700: 56 66 79;
-  --c-slate-750: 48 56 68;
-  --c-slate-800: 41 48 58;
-  --c-slate-850: 34 40 49;
-  --c-slate-900: 28 33 41;
-  --c-slate-950: 22 26 33;
+  /* Anodized Dusk — Warm matte graphite & ivory ink (zero blue-light glare) */
+  --c-slate-50: 242 239 233;
+  --c-slate-100: 228 224 216;
+  --c-slate-200: 204 199 190;
+  --c-slate-300: 168 163 154;
+  --c-slate-400: 132 127 119;
+  --c-slate-500: 100 96 89;
+  --c-slate-600: 72 69 64;
+  --c-slate-700: 52 50 47;
+  --c-slate-750: 43 41 38;
+  --c-slate-800: 36 35 33;
+  --c-slate-850: 28 27 25;
+  --c-slate-900: 23 22 20;
+  --c-slate-950: 17 16 15;
 
-  --scrollbar-thumb: rgb(56 66 79);
+  --surface-sticky: rgb(28 27 25);
+  --scrollbar-thumb: rgb(62 59 54);
   --scrollbar-track: transparent;
 }
 
 :root[data-theme='paper'] {
   color-scheme: light;
 
-  /* Warm Paper (Soothing E-Ink / Alabaster Stone for daytime eye comfort) */
-  --c-slate-50: 24 28 32;
-  --c-slate-100: 34 39 45;
-  --c-slate-200: 48 54 62;
-  --c-slate-300: 72 80 90;
-  --c-slate-400: 104 113 124;
-  --c-slate-500: 132 140 150;
-  --c-slate-600: 168 164 156;
-  --c-slate-700: 214 209 199;
-  --c-slate-750: 225 220 211;
-  --c-slate-800: 233 229 220;
-  --c-slate-850: 248 246 241;
-  --c-slate-900: 242 239 232;
-  --c-slate-950: 235 231 223;
+  /* Archival Paper — Warm unbleached cotton paper & carbon ink */
+  --c-slate-50: 24 23 21;
+  --c-slate-100: 34 32 29;
+  --c-slate-200: 52 49 44;
+  --c-slate-300: 78 74 67;
+  --c-slate-400: 112 106 96;
+  --c-slate-500: 142 135 124;
+  --c-slate-600: 176 169 156;
+  --c-slate-700: 206 199 186;
+  --c-slate-750: 218 212 200;
+  --c-slate-800: 226 220 208;
+  --c-slate-850: 245 241 233;
+  --c-slate-900: 238 233 223;
+  --c-slate-950: 230 224 212;
 
-  --scrollbar-thumb: rgb(196 190 180);
+  --surface-sticky: rgb(245 241 233);
+  --scrollbar-thumb: rgb(186 178 164);
   --scrollbar-track: transparent;
 }
 
 @media (forced-colors: active) {
   :root {
+    --surface-sticky: Canvas;
     --scrollbar-thumb: ButtonText;
     --scrollbar-track: Canvas;
   }
@@ -62,9 +65,62 @@
   body {
     @apply m-0 overflow-hidden bg-slate-900 font-sans text-slate-100 antialiased;
     user-select: none;
+    font-feature-settings: "cv02", "cv03", "cv04", "cv11";
   }
   ::selection {
     @apply bg-sky-500/25;
+  }
+}
+
+/* Responsive semantic data table container (modern-web-guidance: responsive-table) */
+.arkive-table-region {
+  overflow: auto;
+  max-inline-size: 100%;
+  container-type: inline-size;
+}
+
+.arkive-table-region table {
+  border-collapse: separate;
+  border-spacing: 0;
+  width: 100%;
+}
+
+.arkive-table-region thead {
+  position: sticky;
+  inset-block-start: 0;
+  z-index: 2;
+}
+
+.arkive-table-region tbody th {
+  position: sticky;
+  inset-inline-start: 0;
+  z-index: 1;
+  background-color: var(--surface-sticky);
+}
+
+@container (width < 520px) {
+  .arkive-table-region table,
+  .arkive-table-region thead,
+  .arkive-table-region tbody,
+  .arkive-table-region tr,
+  .arkive-table-region th,
+  .arkive-table-region td {
+    display: block;
+  }
+
+  .arkive-table-region thead {
+    display: none;
+  }
+
+  .arkive-table-region tr {
+    margin-block-end: 0.5rem;
+    border: 1px solid rgb(var(--c-slate-800));
+  }
+
+  .arkive-table-region tbody th {
+    position: sticky;
+    inset-block-start: 0;
+    z-index: 2;
   }
 }
 
@@ -77,14 +133,14 @@
 /* Legacy fallback for WebKit/Blink browsers */
 @supports not (scrollbar-color: auto) {
   ::-webkit-scrollbar {
-    width: 8px;
-    height: 8px;
+    width: 7px;
+    height: 7px;
   }
   ::-webkit-scrollbar-track {
     background: var(--scrollbar-track);
   }
   ::-webkit-scrollbar-thumb {
     background: var(--scrollbar-thumb);
-    border-radius: 4px;
+    border-radius: 2px;
   }
 }

@@ -100,19 +100,33 @@ function sendActionToWindow(act) {
   }
 }
 
+function resolvePermanentExePath() {
+  if (process.env.PORTABLE_EXECUTABLE_FILE && fs.existsSync(process.env.PORTABLE_EXECUTABLE_FILE)) {
+    return process.env.PORTABLE_EXECUTABLE_FILE;
+  }
+  const localInstalled = path.join(process.env.LOCALAPPDATA || '', 'Programs', 'Arkive', 'Arkive.exe');
+  const unpackedExe = path.resolve(__dirname, '../release/win-unpacked/Arkive.exe');
+  if (app.isPackaged && !process.execPath.toLowerCase().includes('\\temp\\')) {
+    return process.execPath;
+  }
+  if (fs.existsSync(localInstalled)) return localInstalled;
+  if (fs.existsSync(unpackedExe)) return unpackedExe;
+  return process.execPath;
+}
+
 function createWindow() {
   const appIconPath = fs.existsSync(path.join(__dirname, '../resources/icon.ico'))
     ? path.join(__dirname, '../resources/icon.ico')
     : path.join(__dirname, '../resources/icon.png');
 
   mainWindow = new BrowserWindow({
-    width: 1120,
-    height: 740,
+    width: 1160,
+    height: 750,
     minWidth: 850,
     minHeight: 550,
-    title: 'Arkive — High-Performance Archive Manager',
+    title: 'ARKIVE // High-Performance Archive Commander',
     icon: appIconPath,
-    backgroundColor: '#1c2129',
+    backgroundColor: '#171614',
     show: false,
     autoHideMenuBar: true,
     webPreferences: {
@@ -196,9 +210,7 @@ if (!gotLock) {
   app.whenReady().then(() => {
     // Auto-register context menu on startup
     try {
-      const currentExe = app.isPackaged
-        ? process.execPath
-        : path.resolve(__dirname, '../release/win-unpacked/Arkive.exe');
+      const currentExe = resolvePermanentExePath();
       if (fs.existsSync(currentExe)) {
         registerContextMenu(currentExe);
       }
@@ -375,7 +387,7 @@ ipcMain.handle('app:getStartupAction', () => {
 });
 
 ipcMain.handle('shell:registerContextMenu', () => {
-  const exe = app.isPackaged ? process.execPath : path.resolve(__dirname, '../release/win-unpacked/Arkive.exe');
+  const exe = resolvePermanentExePath();
   return registerContextMenu(exe);
 });
 

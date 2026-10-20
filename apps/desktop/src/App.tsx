@@ -56,6 +56,14 @@ export const App: React.FC = () => {
   const [videoModalPath, setVideoModalPath] = useState<string | null>(null);
   const [createInputs, setCreateInputs] = useState<string[]>([]);
 
+  // External Radial Wheel Trigger (e.g. when launched from Windows Explorer context menu)
+  const [externalWheelTarget, setExternalWheelTarget] = useState<{
+    path: string;
+    name: string;
+    isDir: boolean;
+    seq: number;
+  } | null>(null);
+
   // Preview
   const [previewEntry, setPreviewEntry] = useState<Entry | null>(null);
   const [previewContent, setPreviewContent] = useState<string | null>(null);
@@ -67,7 +75,7 @@ export const App: React.FC = () => {
   const [benchReport, setBenchReport] = useState<BenchReport | null>(null);
 
   // Status & Background Activity
-  const [statusMessage, setStatusMessage] = useState('Ready');
+  const [statusMessage, setStatusMessage] = useState('READY');
   const [isBusy, setIsBusy] = useState(false);
   const [recentArchivePath, setRecentArchivePath] = useState<string | null>(null);
 
@@ -80,16 +88,16 @@ export const App: React.FC = () => {
   const loadDirectory = async (target?: string) => {
     if (!window.arkive?.readDirectory) return;
     try {
-      setStatusMessage(`Browsing ${target || 'local storage'}...`);
+      setStatusMessage(`READING ${target || 'HOME'}...`);
       const res = await window.arkive.readDirectory(target);
       setCurrentFsPath(res.currentPath);
       setFsItems(res.items);
       setSelectedEntries(new Set());
       setBrowserMode('explorer');
-      setStatusMessage(`Browsing ${res.currentPath} (${res.items.length} items)`);
+      setStatusMessage(`${res.currentPath} (${res.items.length} ITEMS)`);
     } catch (err: any) {
       console.error('Error browsing folder:', err);
-      setStatusMessage(`Error browsing folder: ${err?.message || err}`);
+      setStatusMessage(`ERR: ${err?.message || err}`);
     }
   };
 
@@ -98,7 +106,7 @@ export const App: React.FC = () => {
     if (!window.arkive?.listArchive || !window.arkive?.getArchiveInfo) return;
     try {
       setIsBusy(true);
-      setStatusMessage(`Opening ${filePath}...`);
+      setStatusMessage(`MOUNTING ${filePath}...`);
       const list = await window.arkive.listArchive(filePath);
       const info = await window.arkive.getArchiveInfo(filePath);
       setCurrentArchive(filePath);
@@ -108,10 +116,10 @@ export const App: React.FC = () => {
       setSelectedEntries(new Set());
       setBrowserMode('archive');
       setRecentArchivePath(null);
-      setStatusMessage(`Opened ${filePath} (${list.length} entries)`);
+      setStatusMessage(`MOUNTED ${filePath} (${list.length} ENTRIES)`);
     } catch (err: any) {
       alert(`Failed to open archive:\n${err?.message || err}`);
-      setStatusMessage('Error opening archive');
+      setStatusMessage('ERR MOUNTING ARCHIVE');
     } finally {
       setIsBusy(false);
     }
@@ -125,19 +133,33 @@ export const App: React.FC = () => {
   };
 
   const handleExternalAction = async (act: ExternalAction) => {
+    const normPath = act.path.replace(/\\/g, '/').replace(/\/$/, '');
     if (act.action === 'open') {
-      await openArchive(act.path);
+      await openArchive(normPath);
     } else if (act.action === 'browse') {
-      await loadDirectory(act.path);
+      await loadDirectory(normPath);
     } else if (act.action === 'create') {
-      if (isVideoPath(act.path)) {
-        handleOpenVideoCompress(act.path);
+      if (isVideoPath(normPath)) {
+        handleOpenVideoCompress(normPath);
       } else {
-        setCreateInputs([act.path]);
-        setIsCreateOpen(true);
+        // Navigate to parent folder, select item, and pop open the Radial Format Wheel
+        const parts = normPath.split('/');
+        const baseName = parts.pop() || 'archive';
+        let parentDir = parts.join('/');
+        if (parentDir.endsWith(':')) parentDir += '/';
+        if (parentDir) {
+          await loadDirectory(parentDir);
+          setSelectedEntries(new Set([normPath]));
+        }
+        setExternalWheelTarget({
+          path: normPath,
+          name: baseName,
+          isDir: !normPath.split('/').pop()?.includes('.'),
+          seq: Date.now(),
+        });
       }
     } else if (act.action === 'extract') {
-      await openArchive(act.path);
+      await openArchive(normPath);
       setIsExtractOpen(true);
     }
   };
@@ -194,6 +216,8 @@ export const App: React.FC = () => {
   const handleCreateOpen = () => {
     if (browserMode === 'explorer' && selectedEntries.size > 0) {
       setCreateInputs(Array.from(selectedEntries));
+    } else if (browserMode === 'explorer' && currentFsPath) {
+      setCreateInputs([currentFsPath]);
     } else {
       setCreateInputs([]);
     }
@@ -206,7 +230,7 @@ export const App: React.FC = () => {
       const savePath = await window.arkive.saveArchiveDialog(opts.name);
       if (!savePath) return;
       setIsBusy(true);
-      setStatusMessage(`Creating ${savePath}...`);
+      setStatusMessage(`PACKING ${savePath}...`);
       await window.arkive.createArchive({
         archive: savePath,
         inputs: opts.inputs,
@@ -216,17 +240,17 @@ export const App: React.FC = () => {
         threads: opts.threads,
         method: opts.zipMethod,
       });
-      setStatusMessage(`Created archive ${savePath}`);
+      setStatusMessage(`CREATED ${savePath}`);
       await openArchive(savePath);
     } catch (err: any) {
       alert(`Failed to create archive:\n${err?.message || err}`);
-      setStatusMessage('Creation failed');
+      setStatusMessage('PACK FAILED');
     } finally {
       setIsBusy(false);
     }
   };
 
-  // Instant Compression via Right-Click Hold Radial Wheel
+  // Instant Compression via Right-Click Hold Radial Wheel or Inspector Matrix
   const handleQuickCompressChoice = async (choice: RadialZipChoice, targetPath: string) => {
     if (choice.isCustomModal) {
       setCreateInputs([targetPath]);
@@ -247,7 +271,7 @@ export const App: React.FC = () => {
     try {
       setIsBusy(true);
       setRecentArchivePath(null);
-      setStatusMessage(`Packing "${baseName}" into ${baseName}.${choice.format} (${choice.label})...`);
+      setStatusMessage(`PACKING "${baseName}" -> ${baseName}.${choice.format} [${choice.label}]...`);
 
       await window.arkive.createArchive({
         archive: outputArchivePath,
@@ -265,10 +289,10 @@ export const App: React.FC = () => {
       }
 
       setRecentArchivePath(outputArchivePath);
-      setStatusMessage(`Packed ${baseName}.${choice.format}`);
+      setStatusMessage(`PACKED ${baseName}.${choice.format}`);
     } catch (err: any) {
       alert(`Failed to compress folder:\n${err?.message || err}`);
-      setStatusMessage('Quick compression failed');
+      setStatusMessage('QUICK PACK FAILED');
     } finally {
       setIsBusy(false);
     }
@@ -294,18 +318,18 @@ export const App: React.FC = () => {
     if (!window.arkive?.extractArchive || !currentArchive) return;
     try {
       setIsBusy(true);
-      setStatusMessage(`Extracting to ${opts.dest}...`);
+      setStatusMessage(`EXTRACTING TO ${opts.dest}...`);
       await window.arkive.extractArchive({
         archive: currentArchive,
         dest: opts.dest,
         password: opts.password,
         force: opts.overwrite,
       });
-      setStatusMessage(`Extracted successfully to ${opts.dest}`);
+      setStatusMessage(`EXTRACTED TO ${opts.dest}`);
       alert(`Successfully extracted archive to:\n${opts.dest}`);
     } catch (err: any) {
       alert(`Extraction failed:\n${err?.message || err}`);
-      setStatusMessage('Extraction failed');
+      setStatusMessage('EXTRACTION FAILED');
     } finally {
       setIsBusy(false);
     }
@@ -315,13 +339,13 @@ export const App: React.FC = () => {
     if (!window.arkive?.testArchive || !currentArchive) return;
     try {
       setIsBusy(true);
-      setStatusMessage('Testing integrity...');
+      setStatusMessage('VERIFYING CRC-32 INTEGRITY...');
       const out = await window.arkive.testArchive(currentArchive);
-      setStatusMessage('Integrity verified');
+      setStatusMessage('INTEGRITY VERIFIED (OK)');
       alert(out || 'All entries verified successfully (CRC-32 checksums matched).');
     } catch (err: any) {
       alert(`Test failed:\n${err?.message || err}`);
-      setStatusMessage('Integrity test failed');
+      setStatusMessage('CRC VERIFICATION FAILED');
     } finally {
       setIsBusy(false);
     }
@@ -363,7 +387,7 @@ export const App: React.FC = () => {
 
   const handleRunBench = async (config: BenchConfig) => {
     setIsBenchRunning(true);
-    setBenchProgressMsg('Running Rust benchmark engine on dataset...');
+    setBenchProgressMsg('Executing Rust codec benchmark suite...');
 
     if (window.arkive?.runBenchmark) {
       try {
@@ -400,7 +424,7 @@ export const App: React.FC = () => {
       const ok = await window.arkive.registerContextMenu();
       if (ok) {
         setIsContextMenuActive(true);
-        alert('Windows Explorer context menu registered successfully! Right-click any file or folder in Windows Explorer to see Arkive.');
+        alert('Windows Explorer context menu registered! Right-click any folder or file in Windows Explorer to launch Arkive.');
       }
     }
   };
@@ -418,6 +442,24 @@ export const App: React.FC = () => {
     setIsCreateOpen(true);
   };
 
+  // Global keyboard shortcuts (Ctrl+N, Ctrl+O, Ctrl+E)
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'n') {
+        e.preventDefault();
+        handleCreateOpen();
+      } else if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'o') {
+        e.preventDefault();
+        handleOpenArchiveDialog();
+      } else if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'e') {
+        e.preventDefault();
+        handleExtractOpen();
+      }
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [browserMode, selectedEntries, currentArchive, currentFsPath]);
+
   const totalFiles =
     browserMode === 'archive'
       ? archiveEntries.filter((e) => !e.isDir).length
@@ -434,7 +476,7 @@ export const App: React.FC = () => {
   };
 
   return (
-    <div className="flex h-screen w-screen overflow-hidden bg-slate-900 text-slate-100">
+    <div className="flex flex-col h-screen w-screen overflow-hidden bg-slate-900 text-slate-100">
       <Sidebar
         onOpen={handleOpenArchiveDialog}
         onOpenFolder={handleOpenFolderDialog}
@@ -457,7 +499,7 @@ export const App: React.FC = () => {
         onToggleTheme={() => setTheme((t) => (t === 'dusk' ? 'paper' : 'dusk'))}
       />
 
-      <main className="flex min-w-0 flex-1 flex-col">
+      <main className="flex min-h-0 min-w-0 flex-1 flex-col">
         {selectedTab === 'files' ? (
           <FileBrowser
             mode={browserMode}
@@ -472,6 +514,7 @@ export const App: React.FC = () => {
             onOpenArchiveFile={openArchive}
             onCompressVideoFile={handleOpenVideoCompress}
             onQuickCompressChoice={handleQuickCompressChoice}
+            externalWheelTarget={externalWheelTarget}
             selectedItems={selectedEntries}
             onToggleSelect={handleToggleSelect}
             onDropFiles={handleDropFiles}

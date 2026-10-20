@@ -14,12 +14,12 @@ export const ArkiveLogo: React.FC<ArkiveLogoProps> = ({
   variant = 'tile',
 }) => {
   return (
-    <div className={`inline-flex items-center gap-2.5 ${className}`}>
+    <div className={`inline-flex items-center gap-2 ${className}`}>
       <svg
         viewBox="0 0 512 512"
         width={size}
         height={size}
-        className="shrink-0 drop-shadow-sm select-none"
+        className="shrink-0 select-none"
         xmlns="http://www.w3.org/2000/svg"
       >
         <defs>
@@ -83,31 +83,22 @@ export const ArkiveLogo: React.FC<ArkiveLogoProps> = ({
 
         {variant === 'tile' && (
           <>
-            <rect width="512" height="512" rx="116" fill="url(#arkive-bgGrad)" />
+            <rect width="512" height="512" rx="96" fill="url(#arkive-bgGrad)" />
             <rect
               x="2"
               y="2"
               width="508"
               height="508"
-              rx="114"
+              rx="94"
               fill="none"
               stroke="url(#arkive-rimGrad)"
-              strokeWidth="3.5"
+              strokeWidth="4"
             />
             <circle cx="256" cy="265" r="215" fill="url(#arkive-emberGlow)" />
-            <path
-              d="M 96 3 A 116 116 0 0 1 416 3"
-              fill="none"
-              stroke="#ffffff"
-              strokeWidth="2"
-              opacity="0.22"
-            />
           </>
         )}
 
-        {/* Monogram A Glyph */}
         <g>
-          {/* Left Arm & Apex Half */}
           <path
             d="M 256 72 L 256 100 L 272 100 L 272 122 L 256 122 L 256 142 L 272 142 L 272 164 L 256 164 L 256 182 L 218 274 L 256 274 L 256 324 L 194 324 L 148 432 L 94 432 C 86 432 81 423 85 416 L 243 79 C 246 74 251 72 256 72 Z"
             fill="url(#arkive-leftPillar)"
@@ -115,23 +106,19 @@ export const ArkiveLogo: React.FC<ArkiveLogoProps> = ({
             strokeWidth="2.5"
           />
 
-          {/* Right Arm & Apex Half */}
           <path
             d="M 256 72 L 256 80 L 240 80 L 240 102 L 256 102 L 256 124 L 240 124 L 240 146 L 256 146 L 256 166 L 240 166 L 240 182 L 256 182 L 294 274 L 256 274 L 256 324 L 318 324 L 364 432 L 418 432 C 426 432 431 423 427 416 L 269 79 C 266 74 261 72 256 72 Z"
             fill="url(#arkive-rightPillar)"
           />
 
-          {/* Inner Apex Counter Hole */}
           <path d="M 256 182 L 294 274 L 218 274 Z" fill="#0d0c0b" />
 
-          {/* Vault Core Glowing Diamond */}
           <g transform="translate(256, 236)">
             <circle cx="0" cy="0" r="28" fill="url(#arkive-diamondGlow)" />
             <polygon points="0,-16 13,0 0,16 -13,0" fill="url(#arkive-diamondGrad)" />
             <polygon points="0,-10 8,0 0,10 -8,0" fill="#ffffff" />
           </g>
 
-          {/* Integrated Hydraulic Compression Crossbar */}
           <g>
             <polygon points="218,274 294,274 318,324 194,324" fill="url(#arkive-crossbarGrad)" />
 
@@ -147,27 +134,19 @@ export const ArkiveLogo: React.FC<ArkiveLogoProps> = ({
             <polygon points="256,288 260,299 256,310 252,299" fill="#ff7a3d" opacity="0.8" />
           </g>
 
-          {/* Apex Chamfer */}
           <polygon points="256,72 268,90 244,90" fill="#ffffff" opacity="0.95" />
-
-          {/* Base Feet Chamfers */}
           <polygon points="94,432 148,432 142,422 102,422" fill="#ff7a3d" opacity="0.5" />
           <polygon points="418,432 364,432 370,422 410,422" fill="#ffaa55" opacity="0.7" />
         </g>
       </svg>
 
       {withText && (
-        <div className="flex flex-col leading-none">
-          <div className="flex items-center gap-1.5">
-            <span className="text-[14px] font-bold tracking-tight text-slate-50 font-mono lowercase">
-              arkive
-            </span>
-            <span className="text-[9px] font-semibold uppercase tracking-wider text-sky-400 bg-sky-500/15 px-1.5 py-0.5 rounded-full border border-sky-500/25">
-              v0.1
-            </span>
-          </div>
-          <span className="text-[9.5px] text-slate-400 font-medium tracking-wide mt-0.5">
-            Archive Studio
+        <div className="flex items-baseline gap-1.5 leading-none select-none">
+          <span className="text-[13px] font-bold tracking-[0.08em] text-slate-50 font-mono uppercase">
+            ARKIVE
+          </span>
+          <span className="text-[10px] font-mono text-slate-500">
+            0.1
           </span>
         </div>
       )}

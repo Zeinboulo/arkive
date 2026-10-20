@@ -1,23 +1,36 @@
 /**
- * Arkive Eye-Care Theme:
- * Uses CSS custom properties for surface and text tokens so the UI defaults to
- * a low-glare "Soft Dusk" (Nordic Slate + Calm Sage Teal) and supports an
- * instant "Warm Paper" (Alabaster Stone) light mode toggle.
+ * Arkive Hardware-Grade Theme Configuration
+ * Warm Graphite ("Anodized Dusk") & Unbleached Stone ("Archival Paper")
+ * with tactile Copper-Amber & Sage accents — zero neon/purple SaaS clichés.
  */
 const withAlpha = (varName) => `rgb(var(${varName}) / <alpha-value>)`;
 
-const sageTeal = {
-  50: '#f0fdfa',
-  100: '#ccfbf1',
-  200: '#99f6e4',
-  300: '#5eead4',
-  400: '#38b2a6',
-  500: '#2d9a8f',
-  600: '#237e75',
-  700: '#1d655f',
-  800: '#19504c',
-  900: '#16423f',
-  950: '#0b2726',
+const accentPalette = {
+  50: '#fdf7f2',
+  100: '#faeadc',
+  200: '#f3d1b5',
+  300: '#eab285',
+  400: '#df8e53',
+  500: '#d47432',
+  600: '#bd5d22',
+  700: '#9c491d',
+  800: '#7e3c1d',
+  900: '#67331a',
+  950: '#38180b',
+};
+
+const sagePalette = {
+  50: '#f2fbf9',
+  100: '#d5f4ec',
+  200: '#ace8da',
+  300: '#7ad5c2',
+  400: '#4ebaa5',
+  500: '#359e8b',
+  600: '#287f70',
+  700: '#23665b',
+  800: '#20524a',
+  900: '#1e443e',
+  950: '#0c2724',
 };
 
 /** @type {import('tailwindcss').Config} */
@@ -26,12 +39,12 @@ export default {
   theme: {
     borderRadius: {
       none: '0',
-      sm: '4px',
-      DEFAULT: '6px',
-      md: '8px',
-      lg: '10px',
-      xl: '14px',
-      '2xl': '18px',
+      sm: '2px',
+      DEFAULT: '4px',
+      md: '5px',
+      lg: '6px',
+      xl: '8px',
+      '2xl': '10px',
       full: '9999px',
     },
     extend: {
@@ -55,11 +68,11 @@ export default {
           900: withAlpha('--c-slate-900'),
           950: withAlpha('--c-slate-950'),
         },
-        sky: sageTeal,
-        indigo: sageTeal,
-        violet: sageTeal,
-        purple: sageTeal,
-        emerald: sageTeal,
+        sky: accentPalette,
+        indigo: accentPalette,
+        violet: accentPalette,
+        purple: accentPalette,
+        emerald: sagePalette,
       },
     },
   },

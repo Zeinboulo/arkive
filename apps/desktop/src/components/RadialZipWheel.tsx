@@ -1,9 +1,10 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Folder, File as FileIcon, Sparkles, Sliders, Zap, Shield, Package, Layers, Archive } from 'lucide-react';
+import { Folder, File as FileIcon, Sliders, Zap, Shield, Package, Layers, Archive, Cpu } from 'lucide-react';
 import { ArchiveFormat } from '../types';
 
 export interface RadialZipChoice {
   id: string;
+  code: string;
   label: string;
   extLabel: string;
   subtitle: string;
@@ -16,63 +17,70 @@ export interface RadialZipChoice {
 export const RADIAL_ZIP_CHOICES: RadialZipChoice[] = [
   {
     id: 'zip',
+    code: '01',
     label: 'ZIP',
     extLabel: '.zip',
-    subtitle: 'Standard · Universal',
+    subtitle: 'Deflate · Universal OS',
     format: 'zip',
     level: 6,
     zipMethod: 'deflate',
   },
   {
     id: '7z',
-    label: '7-Zip',
+    code: '02',
+    label: '7-ZIP',
     extLabel: '.7z',
-    subtitle: 'LZMA2 · Max Ratio',
+    subtitle: 'LZMA2 · Ultra Ratio',
     format: '7z',
     level: 7,
     zipMethod: 'deflate',
   },
   {
     id: 'tar.zst',
+    code: '03',
     label: 'TAR.ZST',
     extLabel: '.tar.zst',
-    subtitle: 'Zstandard · Ultra Fast',
+    subtitle: 'Zstd · 500+ MB/s Fast',
     format: 'tar.zst',
     level: 6,
     zipMethod: 'zstd',
   },
   {
     id: 'tar.gz',
+    code: '04',
     label: 'TAR.GZ',
     extLabel: '.tar.gz',
-    subtitle: 'Gzip · Linux / POSIX',
+    subtitle: 'Gzip · POSIX Standard',
     format: 'tar.gz',
     level: 6,
     zipMethod: 'deflate',
   },
   {
     id: 'tar.xz',
+    code: '05',
     label: 'TAR.XZ',
     extLabel: '.tar.xz',
-    subtitle: 'XZ · Deep Archival',
+    subtitle: 'LZMA2 · Cold Archival',
     format: 'tar.xz',
     level: 6,
     zipMethod: 'deflate',
   },
   {
     id: 'zip-zstd',
-    label: 'ZIP (Zstd)',
+    code: '06',
+    label: 'ZIP-ZSTD',
     extLabel: '.zip',
-    subtitle: 'High-Speed Zstd ZIP',
+    subtitle: 'Zstandard inside ZIP',
     format: 'zip',
     level: 6,
     zipMethod: 'zstd',
   },
   {
     id: 'custom',
-    label: 'Options…',
-    extLabel: 'Custom',
-    subtitle: 'Password & Threads',
+    code: '07',
+    label: 'CONFIG…',
+    extLabel: 'Dialog',
+    subtitle: 'AES-256 & Threads',
     format: 'zip',
     level: 6,
     zipMethod: 'deflate',
@@ -154,33 +162,33 @@ export const RadialZipWheel: React.FC<RadialZipWheelProps> = ({
 }) => {
   const [activeIndex, setActiveIndex] = useState<number | null>(null);
   const [isHoldingRight, setIsHoldingRight] = useState(true);
+  const [cursorOffset, setCursorOffset] = useState<{ dx: number; dy: number }>({ dx: 0, dy: 0 });
 
-  const wheelSize = 296;
+  const wheelSize = 316;
   const half = wheelSize / 2;
-  const innerR = 50;
-  const outerR = 132;
+  const innerR = 54;
+  const outerR = 140;
   const count = RADIAL_ZIP_CHOICES.length;
   const sliceDeg = 360 / count;
 
-  // Clamp wheel center so it always stays fully inside viewport
-  const clampedX = Math.max(half + 16, Math.min(window.innerWidth - half - 16, x));
-  const clampedY = Math.max(half + 16, Math.min(window.innerHeight - half - 16, y));
+  const viewportW = typeof window !== 'undefined' ? window.innerWidth : 1024;
+  const viewportH = typeof window !== 'undefined' ? window.innerHeight : 720;
+  const clampedX = Math.max(half + 16, Math.min(viewportW - half - 16, x));
+  const clampedY = Math.max(half + 16, Math.min(viewportH - half - 16, y));
 
   const getSliceFromPoint = useCallback(
-    (clientX: number, clientY: number): { index: number | null; dist: number } => {
+    (clientX: number, clientY: number): { index: number | null; dist: number; dx: number; dy: number } => {
       const dx = clientX - clampedX;
       const dy = clientY - clampedY;
       const dist = Math.hypot(dx, dy);
-      if (dist < innerR - 6 || dist > outerR + 48) {
-        return { index: null, dist };
+      if (dist < innerR - 14 || dist > outerR + 70) {
+        return { index: null, dist, dx, dy };
       }
-      // Angle where 0 deg is 12 o'clock (top), increasing clockwise
       let angle = (Math.atan2(dy, dx) * 180) / Math.PI + 90;
       if (angle < 0) angle += 360;
-      // Offset by half a slice so Slice 0 is centered at 0 deg (12 o'clock)
       const shifted = (angle + sliceDeg / 2) % 360;
       const idx = Math.floor(shifted / sliceDeg);
-      return { index: idx >= 0 && idx < count ? idx : null, dist };
+      return { index: idx >= 0 && idx < count ? idx : null, dist, dx, dy };
     },
     [clampedX, clampedY, innerR, outerR, sliceDeg, count]
   );
@@ -189,10 +197,12 @@ export const RadialZipWheel: React.FC<RadialZipWheelProps> = ({
     if (!isOpen) return;
     setActiveIndex(null);
     setIsHoldingRight(true);
+    setCursorOffset({ dx: 0, dy: 0 });
 
-    const handleMouseMove = (e: MouseEvent) => {
-      const { index } = getSliceFromPoint(e.clientX, e.clientY);
+    const handlePointerMove = (e: MouseEvent) => {
+      const { index, dx, dy } = getSliceFromPoint(e.clientX, e.clientY);
       setActiveIndex(index);
+      setCursorOffset({ dx, dy });
     };
 
     const handleMouseUp = (e: MouseEvent) => {
@@ -201,17 +211,17 @@ export const RadialZipWheel: React.FC<RadialZipWheelProps> = ({
 
       if (e.button === 2) {
         setIsHoldingRight(false);
-        // If user held right-click and dragged onto a slice, trigger immediately on release!
+        // If user dragged onto any format sector while holding right-click, execute immediately!
         if (index !== null) {
           onSelectChoice(RADIAL_ZIP_CHOICES[index], targetPath);
           onClose();
           return;
         }
-        // If user held right-click for a long time in the center cancel zone (> 600ms) and released, close
-        if (elapsed > 600 && dist < innerR) {
+        // If held for > 650ms inside center deadzone and released, cancel
+        if (elapsed > 650 && dist < innerR - 8) {
           onClose();
         }
-        // Otherwise keep the wheel pinned open so the user can move and click a slice
+        // Otherwise keep wheel pinned open so user can click any sector
         return;
       }
 
@@ -219,7 +229,7 @@ export const RadialZipWheel: React.FC<RadialZipWheelProps> = ({
         if (index !== null) {
           onSelectChoice(RADIAL_ZIP_CHOICES[index], targetPath);
           onClose();
-        } else {
+        } else if (dist > outerR + 12 || dist < innerR - 10) {
           onClose();
         }
       }
@@ -237,15 +247,15 @@ export const RadialZipWheel: React.FC<RadialZipWheelProps> = ({
       }
     };
 
-    window.addEventListener('mousemove', handleMouseMove);
-    window.addEventListener('mouseup', handleMouseUp);
-    window.addEventListener('keydown', handleKeyDown);
+    window.addEventListener('mousemove', handlePointerMove, true);
+    window.addEventListener('mouseup', handleMouseUp, true);
+    window.addEventListener('keydown', handleKeyDown, true);
     return () => {
-      window.removeEventListener('mousemove', handleMouseMove);
-      window.removeEventListener('mouseup', handleMouseUp);
-      window.removeEventListener('keydown', handleKeyDown);
+      window.removeEventListener('mousemove', handlePointerMove, true);
+      window.removeEventListener('mouseup', handleMouseUp, true);
+      window.removeEventListener('keydown', handleKeyDown, true);
     };
-  }, [isOpen, openedAt, getSliceFromPoint, onSelectChoice, onClose, targetPath, innerR]);
+  }, [isOpen, openedAt, getSliceFromPoint, onSelectChoice, onClose, targetPath, innerR, outerR]);
 
   if (!isOpen) return null;
 
@@ -265,18 +275,24 @@ export const RadialZipWheel: React.FC<RadialZipWheelProps> = ({
       case 'tar.xz':
         return <Layers className={cls} />;
       case 'zip-zstd':
-        return <Sparkles className={cls} />;
+        return <Cpu className={cls} />;
       default:
         return <Sliders className={cls} />;
     }
   };
 
+  // Vector indicator endpoint clamped inside wheel
+  const vecDist = Math.min(innerR - 6, Math.hypot(cursorOffset.dx, cursorOffset.dy));
+  const vecAngle = Math.atan2(cursorOffset.dy, cursorOffset.dx);
+  const vecX = half + vecDist * Math.cos(vecAngle);
+  const vecY = half + vecDist * Math.sin(vecAngle);
+
   return (
     <div
       onContextMenu={(e) => e.preventDefault()}
-      className="fixed inset-0 z-50 bg-slate-950/35 select-none"
+      className="fixed inset-0 z-50 bg-black/45 select-none"
     >
-      {/* Floating Radial Wheel Container */}
+      {/* Hardware Dial Container */}
       <div
         style={{
           left: `${clampedX - half}px`,
@@ -292,50 +308,82 @@ export const RadialZipWheel: React.FC<RadialZipWheelProps> = ({
           viewBox={`0 0 ${wheelSize} ${wheelSize}`}
           className="overflow-visible drop-shadow-2xl"
         >
-          {/* Subtle outer halo ring */}
+          {/* Outer mechanical bezel */}
           <circle
             cx={half}
             cy={half}
-            r={outerR + 6}
-            className="fill-slate-900/90 stroke-slate-700/70"
+            r={outerR + 8}
+            className="fill-slate-950/95 stroke-slate-700"
             strokeWidth="1.5"
           />
+          <circle
+            cx={half}
+            cy={half}
+            r={outerR + 4}
+            className="fill-none stroke-slate-800"
+            strokeDasharray="3 3"
+            strokeWidth="1"
+          />
 
-          {/* Radial Sectors */}
+          {/* 7 Annular Sectors */}
           {RADIAL_ZIP_CHOICES.map((choice, idx) => {
             const centerAngle = idx * sliceDeg;
-            const gap = 2.2;
+            const gap = 1.8;
             const startAngle = centerAngle - sliceDeg / 2 + gap;
             const endAngle = centerAngle + sliceDeg / 2 - gap;
             const isActive = activeIndex === idx;
-            const currentOuter = isActive ? outerR + 7 : outerR;
+            const currentOuter = isActive ? outerR + 6 : outerR;
             const d = createSectorPath(half, half, innerR, currentOuter, startAngle, endAngle);
 
             return (
-              <g key={choice.id} className="cursor-pointer">
+              <g
+                key={choice.id}
+                className="cursor-pointer"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onSelectChoice(choice, targetPath);
+                  onClose();
+                }}
+              >
                 <path
                   d={d}
-                  className={`transition-all duration-100 ${
+                  className={`transition-all duration-75 ${
                     isActive
-                      ? 'fill-sky-500 stroke-sky-300'
+                      ? 'fill-sky-600 stroke-sky-300'
                       : choice.isCustomModal
-                      ? 'fill-slate-800/95 stroke-slate-700/80 hover:fill-slate-750'
-                      : 'fill-slate-850/95 stroke-slate-700/70 hover:fill-slate-800'
+                      ? 'fill-slate-900 stroke-slate-700 hover:fill-slate-800'
+                      : 'fill-slate-850 stroke-slate-750 hover:fill-slate-800'
                   }`}
-                  strokeWidth={isActive ? '1.8' : '1'}
+                  strokeWidth={isActive ? '1.75' : '1'}
                 />
               </g>
             );
           })}
 
-          {/* Inner Center Hub Ring */}
+          {/* Center Hub Ring */}
           <circle
             cx={half}
             cy={half}
             r={innerR - 4}
-            className="fill-slate-900 stroke-slate-700"
+            className="fill-slate-950 stroke-slate-700"
             strokeWidth="1.5"
           />
+
+          {/* Live Vector Line when dragging */}
+          {activeIndex !== null && (
+            <>
+              <line
+                x1={half}
+                y1={half}
+                x2={vecX}
+                y2={vecY}
+                className="stroke-sky-400"
+                strokeWidth="2"
+                strokeLinecap="round"
+              />
+              <circle cx={vecX} cy={vecY} r="3" className="fill-sky-300" />
+            </>
+          )}
         </svg>
 
         {/* Sector Labels Overlay */}
@@ -354,11 +402,18 @@ export const RadialZipWheel: React.FC<RadialZipWheelProps> = ({
               }}
               className="pointer-events-none absolute -translate-x-1/2 -translate-y-1/2 flex flex-col items-center text-center"
             >
-              <div className="mb-0.5 flex items-center justify-center">
+              <div className="flex items-center gap-1 mb-0.5">
+                <span
+                  className={`text-[8.5px] font-mono ${
+                    isActive ? 'text-sky-100' : 'text-slate-500'
+                  }`}
+                >
+                  {choice.code}
+                </span>
                 {getChoiceIcon(choice.id, isActive)}
               </div>
               <span
-                className={`text-[11px] font-bold tracking-tight leading-tight ${
+                className={`text-[11px] font-mono font-bold tracking-wider leading-tight ${
                   isActive ? 'text-white' : 'text-slate-100'
                 }`}
               >
@@ -375,41 +430,41 @@ export const RadialZipWheel: React.FC<RadialZipWheelProps> = ({
           );
         })}
 
-        {/* Center Hub Information */}
+        {/* Center Hub Readout */}
         <div
           style={{
             width: `${(innerR - 6) * 2}px`,
             height: `${(innerR - 6) * 2}px`,
           }}
-          className="pointer-events-none absolute flex flex-col items-center justify-center rounded-full px-2 text-center"
+          className="pointer-events-none absolute flex flex-col items-center justify-center rounded-full px-1.5 text-center"
         >
-          <div className="flex items-center gap-1 max-w-full text-slate-400 mb-0.5">
+          <div className="flex items-center gap-1 max-w-full mb-0.5">
             {isDir ? (
-              <Folder className="w-3 h-3 text-amber-400 shrink-0" />
+              <Folder className="w-3 h-3 text-sky-400 shrink-0" />
             ) : (
-              <FileIcon className="w-3 h-3 text-sky-400 shrink-0" />
+              <FileIcon className="w-3 h-3 text-slate-400 shrink-0" />
             )}
-            <span className="text-[9px] font-medium truncate max-w-[62px] text-slate-300">
+            <span className="text-[9px] font-mono truncate max-w-[68px] text-slate-300">
               {targetName}
             </span>
           </div>
 
           {activeChoice ? (
             <>
-              <span className="text-[11px] font-bold text-sky-400 leading-tight">
+              <span className="text-[11px] font-mono font-bold text-sky-400 leading-tight">
                 {activeChoice.extLabel}
               </span>
-              <span className="text-[8.5px] text-slate-400 leading-tight mt-0.5 line-clamp-2">
+              <span className="text-[8px] font-mono text-slate-400 leading-tight mt-0.5 line-clamp-2">
                 {activeChoice.subtitle}
               </span>
             </>
           ) : (
             <>
-              <span className="text-[10px] font-semibold text-slate-200 leading-tight">
-                Quick Pack
+              <span className="text-[9.5px] font-mono font-bold uppercase tracking-wider text-slate-200 leading-tight">
+                PACK DIAL
               </span>
-              <span className="text-[8.5px] text-slate-400 leading-tight mt-0.5">
-                {isHoldingRight ? 'Drag & release' : 'Click format'}
+              <span className="text-[8px] font-mono text-slate-400 leading-tight mt-0.5">
+                {isHoldingRight ? 'Drag & release' : 'Click 01–07'}
               </span>
             </>
           )}
