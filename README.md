@@ -9,6 +9,11 @@
 </p>
 
 <p align="center">
+  <a href="https://zeinboulo.github.io/arkive/"><strong>🌐 Official Website &amp; Interactive Demo</strong></a> ·
+  <a href="https://github.com/Zeinboulo/arkive/releases/latest"><strong>⬇️ Download for Windows (Installer &amp; Portable)</strong></a>
+</p>
+
+<p align="center">
   <a href="https://opensource.org/licenses/MIT"><img src="https://img.shields.io/badge/License-MIT-10b981.svg" alt="License: MIT" /></a>
   <a href="https://www.rust-lang.org/"><img src="https://img.shields.io/badge/Rust-1.70+-0d9488.svg" alt="Rust" /></a>
   <a href="https://www.electronjs.org/"><img src="https://img.shields.io/badge/Electron-Desktop-0ea5e9.svg" alt="Electron" /></a>
